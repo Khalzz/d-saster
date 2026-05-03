@@ -1,0 +1,21 @@
+import { useRef } from "react";
+
+export default function Modal({ children, className, isOpen, onClose }: { children: React.ReactNode, className?: string, isOpen?: boolean, onClose?: () => void }) {
+  const mouseDownTarget = useRef<EventTarget | null>(null);
+
+  return (
+    <div
+      className={`absolute z-30 backdrop-blur-lg rounded-none h-full w-full flex items-start justify-center pt-[20%] transition-opacity duration-300 ${isOpen === false ? "opacity-0 pointer-events-none" : "opacity-100"} ${className}`}
+      onMouseDown={(e) => { mouseDownTarget.current = e.target; }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) {
+          onClose?.();
+        }
+      }}
+    >
+      <div>
+        {children}
+      </div>
+    </div>
+  );
+}

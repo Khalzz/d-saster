@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #161616;
+  --color-surface: #1C1C1C;
+  --color-surface-hover: #c8a84b1a;
+  --color-gold-50: #fdf8ec;
+  --color-gold-100: #f9efce;
+  --color-gold-200: #f2dc9a;
+  --color-gold-300: #e9c96a;
+  --color-gold-400: #ddb84e;
+  --color-gold-500: #c8a84b;
+  --color-gold-600: #a8872d;
+  --color-gold-700: #7e6320;
+  --color-gold-800: #554018;
+  --color-gold-900: #2e2210;
+  --color-gold-950: #171009;
+
+  /* ── PURPLE ── */
+  --color-purple-50:  #f0ecf5;
+  --color-purple-100: #d8cfea;
+  --color-purple-200: #b09ecc;
+  --color-purple-300: #8a7aaa;
+  --color-purple-400: #7a6a8a;  /* your light */
+  --color-purple-500: #5a4e70;
+  --color-purple-600: #433858;
+  --color-purple-700: #342c45;
+  --color-purple-800: #2a1f3d;  /* your base */
+  --color-purple-900: #1a1228;
+  --color-purple-950: #0d0914;
+
+  /* ── GREEN ── */
+  --color-green-50:  #ecf5ee;
+  --color-green-100: #cce0d0;
+  --color-green-200: #9dc2a3;
+  --color-green-300: #7aa882;
+  --color-green-400: #6a8a6f;   /* your light */
+  --color-green-500: #4e6e54;
+  --color-green-600: #3a5440;
+  --color-green-700: #2a3e2f;
+  --color-green-800: #1a2d1f;   /* your base */
+  --color-green-900: #0f1c13;
+  --color-green-950: #070e09;
+
+  /* ── BLUE ── */
+  --color-blue-50:  #eceff5;
+  --color-blue-100: #ccd2e0;
+  --color-blue-200: #9da8c2;
+  --color-blue-300: #7a85aa;
+  --color-blue-400: #6a758a;    /* your light */
+  --color-blue-500: #4e5870;
+  --color-blue-600: #3a4358;
+  --color-blue-700: #2a3045;
+  --color-blue-800: #1a1f2d;    /* your base */
+  --color-blue-900: #0f1220;
+  --color-blue-950: #070910;
+
+  /* ── RED ── */
+  --color-red-50:  #f5ecea;
+  --color-red-100: #e0ccca;
+  --color-red-200: #c29d9a;
+  --color-red-300: #a87a76;
+  --color-red-400: #8a5a58;     /* light — aged rust */
+  --color-red-500: #6e3e3c;
+  --color-red-600: #542e2c;
+  --color-red-700: #3e2020;
+  --color-red-800: #2a1515;     /* base — dried blood */
+  --color-red-900: #180c0c;
+  --color-red-950: #0a0505;
+
+  --color-purple: #2a1f3d;
+  --color-purple-light: #7a6a8a;
+  --color-green: #1a2d1f;
+  --color-green-light: #6a8a6f;
+  --color-blue: #1a1f2d;
+  --color-blue-light: #6a758a;
+
+  --animate-fade-in: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overscroll-behavior: none;
+}
+
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
