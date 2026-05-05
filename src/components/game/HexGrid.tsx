@@ -10,9 +10,10 @@ interface HexGridProps {
   onCellClick?: (col: number, row: number) => void;
   editMode?: boolean;
   showToken?: boolean;
+  bg?: string;
 }
 
-export default function HexGrid({ cols = 13, rows = 11, cellSize = 36, gridType = "hex", disabledCells, selectedCells, onCellClick, editMode = false, showToken = true }: HexGridProps) {
+export default function HexGrid({ cols = 13, rows = 11, cellSize = 36, gridType = "hex", disabledCells, selectedCells, onCellClick, editMode = false, showToken = true, bg }: HexGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const propsRef = useRef({ disabledCells, selectedCells, onCellClick, editMode });
   propsRef.current = { disabledCells, selectedCells, onCellClick, editMode };
@@ -311,6 +312,13 @@ export default function HexGrid({ cols = 13, rows = 11, cellSize = 36, gridType 
     }
 
     function onMouseDown(e: MouseEvent) {
+      if (e.button === 1) {
+        e.preventDefault();
+        s.isPanning = true;
+        s.panStart = { mx: e.clientX, my: e.clientY, cx: s.camX, cy: s.camY };
+        canvas.style.cursor = "grabbing";
+        return;
+      }
       if (e.button !== 0) return;
       const { x, y } = toWorld(e.clientX, e.clientY);
       if (propsRef.current.editMode) {
@@ -334,6 +342,11 @@ export default function HexGrid({ cols = 13, rows = 11, cellSize = 36, gridType 
     }
 
     function onMouseUp(e: MouseEvent) {
+      if (e.button === 1) {
+        s.isPanning = false;
+        canvas.style.cursor = "default";
+        return;
+      }
       if (e.button !== 0) return;
       if (s.draggingToken) {
         if (s.dragHex) {

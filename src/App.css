@@ -83,6 +83,15 @@
   to { opacity: 1; }
 }
 
+@layer base {
+  button {
+    @apply bg-surface border border-gold-500 min-w-10 w-fit h-10 pointer-events-auto rounded-md text-gold-500
+          hover:border-gold-400 hover:bg-surface-hover
+          transition-all cursor-pointer select-none
+          ring-0 active:ring active:ring-gold-500 flex items-center justify-center;
+  }
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;

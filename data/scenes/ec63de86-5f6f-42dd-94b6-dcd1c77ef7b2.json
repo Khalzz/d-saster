@@ -1,0 +1,11 @@
+{
+  "id": "ec63de86-5f6f-42dd-94b6-dcd1c77ef7b2",
+  "name": "Test",
+  "gridType": "hex",
+  "cols": 31,
+  "rows": 16,
+  "disabledCells": [],
+  "bg": null,
+  "bgBounds": null,
+  "cellSize": 36
+}

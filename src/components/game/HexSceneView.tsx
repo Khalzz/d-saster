@@ -112,21 +112,27 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
     return bestD < cs ? best : null;
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const rect = containerRef.current!.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const delta = e.deltaY * (e.deltaMode === 2 ? 400 : e.deltaMode === 1 ? 16 : 1);
-    const factor = e.ctrlKey ? Math.pow(0.99, e.deltaY) : Math.pow(0.999, delta);
-    setCam(c => {
-      const nz = Math.max(0.3, Math.min(4, c.zoom * factor));
-      return { x: mx - (mx - c.x) * (nz / c.zoom), y: my - (my - c.y) * (nz / c.zoom), zoom: nz };
-    });
-  };
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const delta = e.deltaY * (e.deltaMode === 2 ? 400 : e.deltaMode === 1 ? 16 : 1);
+      const factor = e.ctrlKey ? Math.pow(0.99, e.deltaY) : Math.pow(0.999, delta);
+      setCam(c => {
+        const nz = Math.max(0.3, Math.min(4, c.zoom * factor));
+        return { x: mx - (mx - c.x) * (nz / c.zoom), y: my - (my - c.y) * (nz / c.zoom), zoom: nz };
+      });
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
 
   const onMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 2) {
+    if (e.button === 1) {
       e.preventDefault();
       panRef.current = { mx: e.clientX, my: e.clientY, cx: cam.x, cy: cam.y };
       setPanning(true);
@@ -234,14 +240,13 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
   return (
     <div
       ref={containerRef}
-      className="w-full h-full overflow-hidden"
-      onWheel={handleWheel}
+      className="w-full h-full overflow-hidden relative"
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseLeave}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ cursor: panning ? "grabbing" : "default" }}
+      style={{ cursor: "default" }}
     >
       <svg width="100%" height="100%">
         <g transform={`translate(${cam.x}, ${cam.y}) scale(${cam.zoom})`}>
@@ -273,6 +278,7 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
           />
         )}
       </svg>
+      {panning && <div className="absolute inset-0" style={{ cursor: "grabbing" }} />}
     </div>
   );
 }

@@ -4,7 +4,6 @@ import Play from "./pages/play/Play";
 import CampaignSelection from "./pages/campaign/Campaign";
 import Login from "./pages/login/Login";
 import SceneEditor from "./pages/scene/scene-editor";
-
 function App() {
   return (
     <BrowserRouter>

@@ -60,11 +60,79 @@ fn list_scenes() -> Result<Vec<SceneData>, String> {
     Ok(scenes)
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CampaignData {
+    id: String,
+    title: String,
+    description: String,
+    tags: Vec<String>,
+    color: String,
+    image: Option<String>,
+    scenes: Option<Vec<String>>,
+}
+
+fn campaigns_dir() -> Result<PathBuf, String> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("could not resolve project root")?
+        .to_path_buf();
+    Ok(root.join("data").join("campaigns"))
+}
+
+#[tauri::command]
+fn save_campaign(campaign: CampaignData) -> Result<(), String> {
+    let dir = campaigns_dir()?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("{}.json", campaign.id));
+    let json = serde_json::to_string_pretty(&campaign).map_err(|e| e.to_string())?;
+    fs::write(path, json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_campaigns() -> Result<Vec<CampaignData>, String> {
+    let dir = campaigns_dir()?;
+    if !dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut campaigns = vec![];
+    for entry in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+        let path = entry.map_err(|e| e.to_string())?.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        match serde_json::from_str::<CampaignData>(&content) {
+            Ok(c) => campaigns.push(c),
+            Err(_) => continue,
+        }
+    }
+    Ok(campaigns)
+}
+
+#[tauri::command]
+fn delete_scene(id: String) -> Result<(), String> {
+    let path = scenes_dir()?.join(format!("{}.json", id));
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_campaign(id: String) -> Result<(), String> {
+    let path = campaigns_dir()?.join(format!("{}.json", id));
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![save_scene, list_scenes])
+        .invoke_handler(tauri::generate_handler![save_scene, list_scenes, delete_scene, save_campaign, list_campaigns, delete_campaign])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

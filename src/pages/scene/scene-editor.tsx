@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import SceneEditorCanvas, { Scene, DEFAULT_CELL_SIZE } from "../../components/game/SceneEditor";
-import Button from "../../components/ui/buttons/BaseButton";
 import { ChevronLeft } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -79,9 +78,9 @@ export default function SceneEditor() {
     <main className="h-full min-w-screen bg-base flex justify-center items-center relative">
       <SceneEditorCanvas scene={scene} onChange={setScene} onSave={handleSave} />
       <div className="absolute top-4 left-4 z-20 pointer-events-auto">
-        <Button className="text-sm flex items-center justify-center w-10! h-10!" onClick={() => navigate("/play")}>
+        <button className="text-sm flex items-center justify-center w-10! h-10!" onClick={() => navigate("/play")}>
           <ChevronLeft />
-        </Button>
+        </button>
       </div>
       <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-auto bg-gold-500 text-gold-900 px-2 rounded-b-md">
         {editingName ? (

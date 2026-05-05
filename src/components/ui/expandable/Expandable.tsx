@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface ExpandableItem {
   label: string;
   onClick?: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
 }
 
@@ -36,7 +37,7 @@ export default function Expandable({ name, icon, count, items, defaultOpen = fal
       </div>
       <div
         ref={contentRef}
-        className="overflow-hidden transition-[max-height,opacity] duration-200 ease-in-out bg-gold-950 text-gold-500"
+        className="overflow-hidden transition-[max-height,opacity] duration-200 ease-in-out bg-[#121212] text-gold-500"
         style={{
           maxHeight: open ? contentRef.current?.scrollHeight ?? 1000 : 0,
           opacity: open ? 1 : 0,
@@ -45,18 +46,28 @@ export default function Expandable({ name, icon, count, items, defaultOpen = fal
         {items.map((item, index) => (
           <div
             key={index}
-            className="hover:bg-gold-800 w-full h-fit cursor-pointer transition-colors p-2 px-6 flex justify-between items-center group"
+            className="hover:bg-gold-900 w-full h-fit cursor-pointer transition-colors p-2 px-6 flex justify-between items-center group"
             onClick={item.onClick}
           >
-            <span>{item.label}</span>
-            {item.onDelete && (
-              <div
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 cursor-pointer p-1"
-                onClick={(e) => { e.stopPropagation(); item.onDelete?.(); }}
-              >
-                <Trash2 size={14} />
-              </div>
-            )}
+            <span className="truncate flex-1">{item.label}</span>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {item.onEdit && (
+                <div
+                  className="text-gold-500 hover:text-gold-300 cursor-pointer p-1"
+                  onClick={(e) => { e.stopPropagation(); item.onEdit?.(); }}
+                >
+                  <Pencil size={13} />
+                </div>
+              )}
+              {item.onDelete && (
+                <div
+                  className="text-[#ef4444] hover:text-[#f87171] cursor-pointer p-1"
+                  onClick={(e) => { e.stopPropagation(); item.onDelete?.(); }}
+                >
+                  <Trash2 size={13} />
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

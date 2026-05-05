@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import HexSceneView from "./HexSceneView";
-import Button from "../ui/buttons/BaseButton";
 import { Grid2X2, Hexagon, ImagePlus, Save, X } from "lucide-react";
 
 export const DEFAULT_CELL_SIZE = 36;
@@ -131,18 +130,18 @@ export default function SceneEditor({ scene, onChange, onSave }: SceneEditorProp
       />
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 pointer-events-auto">
         <div className="flex flex-row gap-3 items-center bg-surface border border-gold-500/40 rounded-xl px-5 py-3 shadow-xl">
-          <Button
+          <button
             className={`flex items-center gap-2 px-4! h-11! text-sm ${scene.gridType === "square" ? "bg-gold-500! text-gray-800!" : ""}`}
             onClick={() => onChange({ ...scene, gridType: "square", ...withDims(scene.cellSize, "square", scene.bgBounds) })}
           >
             <Grid2X2 size={18} /> Square
-          </Button>
-          <Button
+          </button>
+          <button
             className={`flex items-center gap-2 px-4! h-11! text-sm ${scene.gridType === "hex" ? "bg-gold-500! text-gray-800!" : ""}`}
             onClick={() => onChange({ ...scene, gridType: "hex", ...withDims(scene.cellSize, "hex", scene.bgBounds) })}
           >
             <Hexagon size={18} /> Hex
-          </Button>
+          </button>
           <div className="w-px h-6 bg-gold-500/20" />
           <div className="flex items-center gap-3">
             <input
@@ -157,17 +156,17 @@ export default function SceneEditor({ scene, onChange, onSave }: SceneEditorProp
             <span className="text-gold-500 text-sm font-medium w-12 text-center">{scene.cellSize}px</span>
           </div>
           <div className="w-px h-6 bg-gold-500/20" />
-          <Button className="h-11! w-11! flex items-center justify-center" onClick={() => bgInputRef.current?.click()}>
+          <button className="h-11! w-11! flex items-center justify-center" onClick={() => bgInputRef.current?.click()}>
             <ImagePlus size={18} />
-          </Button>
+          </button>
           {scene.bg && (
-            <Button className="h-11! w-11! flex items-center justify-center" onClick={() => onChange({ ...scene, bg: undefined, bgBounds: undefined, ...withDims(scene.cellSize, scene.gridType, undefined) })}>
+            <button className="h-11! w-11! flex items-center justify-center" onClick={() => onChange({ ...scene, bg: undefined, bgBounds: undefined, ...withDims(scene.cellSize, scene.gridType, undefined) })}>
               <X size={18} />
-            </Button>
+            </button>
           )}
-          <Button className="h-11! w-11! flex items-center justify-center" onClick={onSave}>
+          <button className="h-11! w-11! flex items-center justify-center" onClick={onSave}>
             <Save size={18} />
-          </Button>
+          </button>
         </div>
         {selectedCells.size > 0 && (
           <div className="z-20 pointer-events-auto bg-surface border border-gold-500 rounded-md p-3 min-w-48">

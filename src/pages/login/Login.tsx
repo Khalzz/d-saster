@@ -10,12 +10,12 @@ export default function Login() {
       <Card className="w-60 space-y-4">
         <p className="w-full text-center bold">Login</p>
         <div className="space-y-2">
-          <Button className="w-full text-center" onClick={() => navigate("/campaign")}>
+          <button className="w-full text-center" onClick={() => navigate("/campaign")}>
             Enter as DM
-          </Button>
-          <Button className="w-full text-center" onClick={() => navigate("/play")}>
+          </button>
+          <button className="w-full text-center" onClick={() => navigate("/play")}>
             Enter as Player
-          </Button>
+          </button>
         </div>
 
       </Card>
