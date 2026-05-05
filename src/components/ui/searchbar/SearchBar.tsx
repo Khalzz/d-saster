@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Input from "../input/Input";
 import Expandable from "../expandable/Expandable";
-import Modal from "../modal/Modal";
 import { Plus, Trash2 } from "lucide-react";
 
 export interface SearchCategoryItem {
@@ -62,6 +61,28 @@ export default function SearchBar({ isOpen, onClose, categories, placeholder = "
 
   return (
     <>
+    {pendingDelete ? (
+      <div className="w-[600px] bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 p-6 flex flex-col gap-4">
+        <div className="flex items-center gap-3 text-[#ef4444]">
+          <Trash2 size={20} />
+          <span className="text-gold-400 font-medium">Delete {pendingDelete.cat.name.slice(0, -1)}</span>
+        </div>
+        <p className="text-gold-500 text-sm">
+          Are you sure you want to delete <span className="text-gold-300 font-medium">"{pendingDelete.item.label}"</span>? This action cannot be undone.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button className="text-sm px-4!" onClick={() => setPendingDelete(null)}>
+            Cancel
+          </button>
+          <button
+            className="text-sm px-4! bg-[#ef4444]/10! border-[#ef4444]! text-[#ef4444]! hover:bg-[#ef4444]/20!"
+            onClick={() => { pendingDelete.cat.onDelete!(pendingDelete.item); setPendingDelete(null); }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ) : (
     <div className="flex flex-col items-center gap-2">
       <div className="w-[600px] bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 overflow-hidden">
         <Input
@@ -102,7 +123,7 @@ export default function SearchBar({ isOpen, onClose, categories, placeholder = "
             ) : (
               <button
                 key={cat.name}
-                className="flex items-center gap-1 text-sm"
+                className="flex items-center gap-1 text-sm px-2"
                 onClick={() => { cat.onCreate?.(query); setQuery(""); }}
               >
                 <Plus className="h-3 w-3" />{cat.icon} {cat.name}
@@ -112,29 +133,7 @@ export default function SearchBar({ isOpen, onClose, categories, placeholder = "
         </div>
       )}
     </div>
-
-    <Modal isOpen={!!pendingDelete} onClose={() => setPendingDelete(null)}>
-      <div className="bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 p-6 w-80 flex flex-col gap-4">
-        <div className="flex items-center gap-3 text-[#ef4444]">
-          <Trash2 size={20} />
-          <span className="text-gold-400 font-medium">Delete {pendingDelete?.cat.name.slice(0, -1)}</span>
-        </div>
-        <p className="text-gold-500 text-sm">
-          Are you sure you want to delete <span className="text-gold-300 font-medium">"{pendingDelete?.item.label}"</span>? This action cannot be undone.
-        </p>
-        <div className="flex gap-2 justify-end">
-          <button className="text-sm px-4!" onClick={() => setPendingDelete(null)}>
-            Cancel
-          </button>
-          <button
-            className="text-sm px-4! bg-[#ef4444]/10! border-[#ef4444]! text-[#ef4444]! hover:bg-[#ef4444]/20!"
-            onClick={() => { pendingDelete?.cat.onDelete!(pendingDelete.item); setPendingDelete(null); }}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </Modal>
+    )}
     </>
   );
 }

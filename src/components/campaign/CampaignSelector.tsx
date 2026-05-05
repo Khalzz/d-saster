@@ -44,7 +44,7 @@ export default function CampaignCard({ campaign, onClick, onDelete }: { campaign
         <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
         {onDelete && (
           <button
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
+            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-colors hover:bg-red-900"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
           >
             <Trash2 size={14} />

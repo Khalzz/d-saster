@@ -1,10 +1,10 @@
-import { Backpack, Map, Menu, User } from "lucide-react";
+import { Backpack, Map, Menu, User, X } from "lucide-react";
 import { Dropdown, Option } from "../../components/ui/dropdown/Dropdown";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import HexGrid from "../../components/game/HexGrid";
-import HexSceneView from "../../components/game/HexSceneView";
+import PlayCanvas from "../../components/game/PlayCanvas";
 import { Scene, DEFAULT_CELL_SIZE } from "../../components/game/SceneEditor";
 import PlayersDisplay from "../../components/game/PlayersDisplay";
 import GlobalSearchBar from "../../components/GlobalSearchBar";
@@ -44,13 +44,14 @@ export default function Play() {
     <main className="h-full min-w-screen bg-base flex justify-center items-center">
       <GlobalSearchBar />
       {activeScene ? (
-        <HexSceneView scene={activeScene} />
+        <PlayCanvas scene={activeScene} />
       ) : (
-        <HexGrid gridType="hex" />
+        <div className="w-full h-full flex items-center justify-center flex-col text-gold-700 gap-4">
+          <p>Welcome to <span className="text-gold-400 font-bold">D&Saster</span> start your campaign by <span className="font-bold">creating a new scene.</span></p>
+        </div>
       )}
       <div className="absolute w-full h-full flex flex-row justify-between pointer-events-none">
-        <div className="flex flex-col justify-between w-full h-full p-4">
-          <div className="pointer-events-auto">
+        <div className="flex flex-col justify-between w-fit h-full p-4">
             <ExpandableMenu
               MainButton={{ MainComponent: <Menu className="h-5 w-5" /> }}
               Options={[
@@ -58,27 +59,68 @@ export default function Play() {
                 { label: "Exit", onClick: () => navigate("/campaign"), className: "text-red-300" },
               ]}
             />
-          </div>
           <div className="flex justify-between items-end">
             <PlayersDisplay />
           </div>
         </div>
-        <div className="flex flex-row w-full h-full justify-end pointer-events-auto">
-          <div className="p-4 flex flex-col gap-2">
-            <button><Map className="h-5 w-5 text-gold-400" /></button>
-            <button><User className="h-5 w-5 text-gold-400" /></button>
-            <button><Backpack className="h-5 w-5 text-gold-400" /></button>
-          </div>
-          <div className="w-125 h-full bg-base border-l border-gold-500/40">
-            <SceneManager campaign={campaign} onSceneSelect={setActiveScene} />
-          </div>
+        <div className="flex flex-row w-fit h-full justify-end">
+          <SideMenu campaign={campaign} setActiveScene={setActiveScene} activeScene={activeScene} />
         </div>
       </div>
     </main>
   );
 }
 
-function SceneManager({ campaign, onSceneSelect }: { campaign: Campaign | null; onSceneSelect: (scene: Scene) => void }) {
+function SideMenu({
+  campaign, setActiveScene, activeScene,
+}: {
+  campaign: Campaign | null;
+  setActiveScene: (scene: Scene) => void;
+  activeScene: Scene | null;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <div className="p-4 flex flex-col gap-2 text-gold-400 h-fit">
+        <button onClick={() => setIsOpen(!isOpen)}><ToggledIcon baseIcon={<Map className="h-5 w-5" />} secundaryIcon={<X className="h-5 w-5" />} state={isOpen} /></button>
+        {
+          /*
+            <button><User className="h-5 w-5 text-gold-400" /></button>
+            <button><Backpack className="h-5 w-5 text-gold-400" /></button>
+          */
+        }
+      </div>
+      <div className={`h-full bg-base border-gold-500/40 ${isOpen ? "w-125 border-l" : "w-0 border-l-0"} transition-width duration-300 overflow-hidden pointer-events-auto`}>
+        <SceneManager campaign={campaign} onSceneSelect={setActiveScene} activeSceneId={activeScene?.id ?? null} />
+      </div>
+    </>);
+}
+
+function ToggledIcon(
+  {
+    baseIcon,
+    secundaryIcon,
+    state
+  }: {
+    baseIcon: React.ReactNode;
+    secundaryIcon: React.ReactNode;
+    state: boolean;
+  }
+) {
+  return (
+    <div className="h-5 w-5 relative">
+      <div className={`absolute inset-0 transition-opacity duration-300 ${state ? "opacity-0" : "opacity-100"}`}>
+        {baseIcon}
+      </div>
+      <div className={`absolute inset-0 transition-opacity duration-300 ${state ? "opacity-100" : "opacity-0"}`}>
+        {secundaryIcon}
+      </div>
+    </div>
+  );
+}
+
+function SceneManager({ campaign, onSceneSelect, activeSceneId }: { campaign: Campaign | null; onSceneSelect: (scene: Scene) => void; activeSceneId: string | null }) {
   const [campaignScenes, setCampaignScenes] = useState<SavedSceneData[]>([]);
 
   useEffect(() => {
@@ -117,24 +159,30 @@ function SceneManager({ campaign, onSceneSelect }: { campaign: Campaign | null; 
       <div className="flex-1 overflow-y-auto p-2">
         {campaignScenes.length > 0 ? (
           <div className="grid grid-cols-2 gap-2">
-            {campaignScenes.map(s => (
-              <div
-                key={s.id}
-                onClick={() => loadScene(s)}
-                className="cursor-pointer rounded-lg overflow-hidden border border-gold-500/10 hover:border-gold-500/50 transition-all hover:scale-[1.02] select-none"
-              >
-                <div className="h-24 w-full bg-[#121212] relative flex items-center justify-center">
-                  {s.bg
-                    ? <img src={s.bg} alt="" className="w-full h-full object-cover" />
-                    : <Map className="h-6 w-6 text-gold-800" />
-                  }
-                  <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+            {campaignScenes.map(s => {
+              const isActive = s.id === activeSceneId;
+              return (
+                <div
+                  key={s.id}
+                  onClick={() => loadScene(s)}
+                  className={`cursor-pointer rounded-lg overflow-hidden border transition-all hover:scale-[1.02] select-none ${isActive ? "border-gold-400/60" : "border-gold-500/10 hover:border-gold-500/50"}`}
+                >
+                  <div className="h-24 w-full bg-[#121212] relative flex items-center justify-center">
+                    {s.bg
+                      ? <img src={s.bg} alt="" className="w-full h-full object-cover" />
+                      : <Map className="h-6 w-6 text-gold-800" />
+                    }
+                    <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+                    {isActive && (
+                      <span className="absolute top-1.5 left-1.5 text-[9px] font-semibold uppercase tracking-wider bg-gold-400/90 text-black px-1.5 py-0.5 rounded">Active</span>
+                    )}
+                  </div>
+                  <div className="px-2.5 py-2 bg-surface">
+                    <p className="text-gold-400 text-xs font-medium truncate">{s.name}</p>
+                  </div>
                 </div>
-                <div className="px-2.5 py-2 bg-surface">
-                  <p className="text-gold-400 text-xs font-medium truncate">{s.name}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-gold-700 text-xs px-3 py-2">

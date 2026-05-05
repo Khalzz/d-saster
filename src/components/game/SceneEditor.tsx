@@ -89,15 +89,23 @@ export default function SceneEditor({ scene, onChange, onSave }: SceneEditorProp
     return () => observer.disconnect();
   }, []);
 
-  const handleCellClick = (col: number, row: number) => {
+  const handleCellClick = (col: number, row: number, additive: boolean) => {
     const key = `${col},${row}`;
-    const newSelected = new Set(selectedCells);
-    if (newSelected.has(key)) {
-      newSelected.delete(key);
+    if (additive) {
+      const newSelected = new Set(selectedCells);
+      if (newSelected.has(key)) {
+        newSelected.delete(key);
+      } else {
+        newSelected.add(key);
+      }
+      setSelectedCells(newSelected);
     } else {
-      newSelected.add(key);
+      if (selectedCells.size === 1 && selectedCells.has(key)) {
+        setSelectedCells(new Set());
+      } else {
+        setSelectedCells(new Set([key]));
+      }
     }
-    setSelectedCells(newSelected);
   };
 
   const handleCellsSelect = (cells: Set<string>) => {

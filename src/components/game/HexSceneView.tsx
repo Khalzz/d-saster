@@ -41,7 +41,7 @@ export function gridBounds(scene: Scene) {
 interface HexSceneViewProps {
   scene: Scene;
   selectedCells?: Set<string>;
-  onCellClick?: (col: number, row: number) => void;
+  onCellClick?: (col: number, row: number, additive: boolean) => void;
   onCellsSelect?: (cells: Set<string>) => void;
 }
 
@@ -49,14 +49,20 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
   const { cols, rows, gridType, disabledCells } = scene;
   const cs = scene.cellSize;
   const containerRef = useRef<HTMLDivElement>(null);
+  const transformRef = useRef<SVGGElement>(null);
   const camRef = useRef({ x: 0, y: 0, zoom: 1 });
   const gridFitRef = useRef(1);
-  const panRef = useRef<{ mx: number; my: number; cx: number; cy: number } | null>(null);
   const lmbRef = useRef<{ cx: number; cy: number; dragging: boolean } | null>(null);
-  const [cam, setCam] = useState({ x: 0, y: 0, zoom: 1 });
   const [panning, setPanning] = useState(false);
   const [rubberBand, setRubberBand] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
-  camRef.current = cam;
+
+  const applyTransform = () => {
+    const g = transformRef.current;
+    if (g) {
+      const { x, y, zoom } = camRef.current;
+      g.setAttribute("transform", `translate(${x}, ${y}) scale(${zoom})`);
+    }
+  };
 
   const naturalBounds = gridBounds(scene);
   // Cell coverage excludes the cs-wide margin gridBounds adds beyond the last cell edge.
@@ -79,10 +85,11 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
       const zoom = Math.min(el.clientWidth / (cw * fit), el.clientHeight / (ch * fit)) * 0.85;
       const scaledW = cw * fit * zoom;
       const scaledH = ch * fit * zoom;
-      setCam({ x: (el.clientWidth - scaledW) / 2, y: (el.clientHeight - scaledH) / 2, zoom });
+      camRef.current = { x: (el.clientWidth - scaledW) / 2, y: (el.clientHeight - scaledH) / 2, zoom };
     } else {
-      setCam({ x: 0, y: 0, zoom: 1 });
+      camRef.current = { x: 0, y: 0, zoom: 1 };
     }
+    applyTransform();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gridType, hasBg]);
 
@@ -122,10 +129,10 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
       const my = e.clientY - rect.top;
       const delta = e.deltaY * (e.deltaMode === 2 ? 400 : e.deltaMode === 1 ? 16 : 1);
       const factor = e.ctrlKey ? Math.pow(0.99, e.deltaY) : Math.pow(0.999, delta);
-      setCam(c => {
-        const nz = Math.max(0.3, Math.min(4, c.zoom * factor));
-        return { x: mx - (mx - c.x) * (nz / c.zoom), y: my - (my - c.y) * (nz / c.zoom), zoom: nz };
-      });
+      const c = camRef.current;
+      const nz = Math.max(0.3, Math.min(4, c.zoom * factor));
+      camRef.current = { x: mx - (mx - c.x) * (nz / c.zoom), y: my - (my - c.y) * (nz / c.zoom), zoom: nz };
+      applyTransform();
     };
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
@@ -134,8 +141,27 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
   const onMouseDown = (e: React.MouseEvent) => {
     if (e.button === 1) {
       e.preventDefault();
-      panRef.current = { mx: e.clientX, my: e.clientY, cx: cam.x, cy: cam.y };
+      const startMx = e.clientX;
+      const startMy = e.clientY;
+      const startCx = camRef.current.x;
+      const startCy = camRef.current.y;
       setPanning(true);
+
+      const onWindowMove = (ev: MouseEvent) => {
+        camRef.current = {
+          ...camRef.current,
+          x: startCx + (ev.clientX - startMx),
+          y: startCy + (ev.clientY - startMy),
+        };
+        applyTransform();
+      };
+      const onWindowUp = () => {
+        setPanning(false);
+        window.removeEventListener("mousemove", onWindowMove);
+        window.removeEventListener("mouseup", onWindowUp);
+      };
+      window.addEventListener("mousemove", onWindowMove);
+      window.addEventListener("mouseup", onWindowUp);
       return;
     }
     if (e.button === 0) {
@@ -144,10 +170,6 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
-    if (panRef.current) {
-      setCam(c => ({ ...c, x: panRef.current!.cx + (e.clientX - panRef.current!.mx), y: panRef.current!.cy + (e.clientY - panRef.current!.my) }));
-      return;
-    }
     if (!lmbRef.current || !(e.buttons & 1)) return;
     if (!lmbRef.current.dragging) {
       const dx = e.clientX - lmbRef.current.cx;
@@ -165,8 +187,6 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
   };
 
   const onMouseUp = (e: React.MouseEvent) => {
-    panRef.current = null;
-    setPanning(false);
     setRubberBand(null);
     const lmb = lmbRef.current;
     lmbRef.current = null;
@@ -205,14 +225,17 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
     } else {
       const { x, y } = screenToWorld(lmb.cx, lmb.cy);
       const cell = cellAtPoint(x, y);
-      if (cell) onCellClick?.(cell.col, cell.row);
+      const additive = e.shiftKey || e.ctrlKey || e.metaKey;
+      if (cell) {
+        onCellClick?.(cell.col, cell.row, additive);
+      } else if (!additive) {
+        onCellsSelect?.(new Set());
+      }
     }
   };
 
   const onMouseLeave = () => {
-    panRef.current = null;
     lmbRef.current = null;
-    setPanning(false);
     setRubberBand(null);
   };
 
@@ -230,7 +253,7 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
           points={cellPoints(x, y, cs, gridType)}
           fill={isSelected ? (isDisabled ? "rgba(153,27,27,0.15)" : "rgba(59,130,246,0.15)") : baseFill}
           stroke={isSelected ? (isDisabled ? "rgba(153,27,27,0.5)" : "rgba(59,130,246,0.7)") : isDisabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.11)"}
-          strokeWidth={isSelected ? 2 / cam.zoom / gridFit : 1 / cam.zoom / gridFit}
+          strokeWidth={isSelected ? 2 / gridFit : 1 / gridFit}
           style={{ cursor: "pointer" }}
         />
       );
@@ -249,7 +272,7 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
       style={{ cursor: "default" }}
     >
       <svg width="100%" height="100%">
-        <g transform={`translate(${cam.x}, ${cam.y}) scale(${cam.zoom})`}>
+        <g ref={transformRef}>
           <g transform={`scale(${gridFit})`}>
             {scene.bg && (
               <image

@@ -30,7 +30,7 @@ function Dropdown(
   return (
     <div
       ref={ref}
-      className={`absolute w-48 bg-surface border border-gold-500 rounded-md text-gold-500 overflow-hidden ${
+      className={`absolute w-48 bg-surface border border-gold-500 rounded-md text-gold-500 overflow-hidden pointer-events-auto ${
         direction === "down" ? "mt-2" : "bottom-full mb-2"
       } ${align === "left" ? "left-0" : "right-0"}`}
     >
