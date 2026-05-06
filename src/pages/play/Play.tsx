@@ -42,7 +42,7 @@ export default function Play() {
 
   return (
     <main className="h-full min-w-screen bg-base flex justify-center items-center">
-      <GlobalSearchBar />
+      <GlobalSearchBar activeCampaign={campaign} />
       {activeScene ? (
         <PlayCanvas scene={activeScene} />
       ) : (
@@ -92,7 +92,9 @@ function SideMenu({
         }
       </div>
       <div className={`h-full bg-base border-gold-500/40 ${isOpen ? "w-125 border-l" : "w-0 border-l-0"} transition-width duration-300 overflow-hidden pointer-events-auto`}>
-        <SceneManager campaign={campaign} onSceneSelect={setActiveScene} activeSceneId={activeScene?.id ?? null} />
+        <div className="w-125 h-full">
+          <SceneManager campaign={campaign} onSceneSelect={setActiveScene} activeSceneId={activeScene?.id ?? null} />
+        </div>
       </div>
     </>);
 }

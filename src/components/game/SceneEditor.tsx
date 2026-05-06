@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import HexSceneView from "./HexSceneView";
-import { Grid2X2, Hexagon, ImagePlus, Save, X } from "lucide-react";
+import { Grid2X2, Hexagon, ImagePlus, X } from "lucide-react";
 
 export const DEFAULT_CELL_SIZE = 36;
 
@@ -19,7 +19,6 @@ export interface Scene {
 interface SceneEditorProps {
   scene: Scene;
   onChange: (scene: Scene) => void;
-  onSave?: () => void;
 }
 
 function computeDims(w: number, h: number, cs: number, gridType: "hex" | "square") {
@@ -35,7 +34,7 @@ function computeDims(w: number, h: number, cs: number, gridType: "hex" | "square
   };
 }
 
-export default function SceneEditor({ scene, onChange, onSave }: SceneEditorProps) {
+export default function SceneEditor({ scene, onChange }: SceneEditorProps) {
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
@@ -136,48 +135,10 @@ export default function SceneEditor({ scene, onChange, onSave }: SceneEditorProp
         onCellClick={handleCellClick}
         onCellsSelect={handleCellsSelect}
       />
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 pointer-events-auto">
-        <div className="flex flex-row gap-3 items-center bg-surface border border-gold-500/40 rounded-xl px-5 py-3 shadow-xl">
-          <button
-            className={`flex items-center gap-2 px-4! h-11! text-sm ${scene.gridType === "square" ? "bg-gold-500! text-gray-800!" : ""}`}
-            onClick={() => onChange({ ...scene, gridType: "square", ...withDims(scene.cellSize, "square", scene.bgBounds) })}
-          >
-            <Grid2X2 size={18} /> Square
-          </button>
-          <button
-            className={`flex items-center gap-2 px-4! h-11! text-sm ${scene.gridType === "hex" ? "bg-gold-500! text-gray-800!" : ""}`}
-            onClick={() => onChange({ ...scene, gridType: "hex", ...withDims(scene.cellSize, "hex", scene.bgBounds) })}
-          >
-            <Hexagon size={18} /> Hex
-          </button>
-          <div className="w-px h-6 bg-gold-500/20" />
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={12}
-              max={80}
-              step={1}
-              value={scene.cellSize}
-              onChange={(e) => { const cs = Number(e.target.value); onChange({ ...scene, cellSize: cs, ...withDims(cs, scene.gridType, scene.bgBounds) }); }}
-              className="w-36 accent-gold-500 cursor-pointer"
-            />
-            <span className="text-gold-500 text-sm font-medium w-12 text-center">{scene.cellSize}px</span>
-          </div>
-          <div className="w-px h-6 bg-gold-500/20" />
-          <button className="h-11! w-11! flex items-center justify-center" onClick={() => bgInputRef.current?.click()}>
-            <ImagePlus size={18} />
-          </button>
-          {scene.bg && (
-            <button className="h-11! w-11! flex items-center justify-center" onClick={() => onChange({ ...scene, bg: undefined, bgBounds: undefined, ...withDims(scene.cellSize, scene.gridType, undefined) })}>
-              <X size={18} />
-            </button>
-          )}
-          <button className="h-11! w-11! flex items-center justify-center" onClick={onSave}>
-            <Save size={18} />
-          </button>
-        </div>
+      {/* Floating settings card – bottom right */}
+      <div className="absolute bottom-6 right-6 z-20 pointer-events-auto flex flex-col gap-3 items-end">
         {selectedCells.size > 0 && (
-          <div className="z-20 pointer-events-auto bg-surface border border-gold-500 rounded-md p-3 min-w-48">
+          <div className="bg-surface border border-gold-500/40 rounded-xl p-3 min-w-48 shadow-xl">
             <span className="text-gold-500 text-sm font-medium">{selectedCells.size} cell{selectedCells.size > 1 ? "s" : ""} selected</span>
             <div className="flex flex-col gap-2 mt-2">
               <div className="flex items-center justify-between">
@@ -192,6 +153,58 @@ export default function SceneEditor({ scene, onChange, onSave }: SceneEditorProp
             </div>
           </div>
         )}
+        <div className="bg-surface border border-gold-500/40 rounded-xl shadow-xl w-64 flex flex-col divide-y divide-gold-500/20">
+          {/* Grid section */}
+          <div className="px-3 py-2 flex flex-col gap-1.5">
+            <span className="text-gold-600 text-[10px] font-semibold uppercase tracking-wider">Grid</span>
+            <div className="flex gap-1">
+              <button
+                className={`flex-1! flex items-center justify-center gap-1.5 h-8! text-xs! rounded-md! ${scene.gridType === "square" ? "bg-gold-500! text-gray-800!" : ""}`}
+                onClick={() => onChange({ ...scene, gridType: "square", ...withDims(scene.cellSize, "square", scene.bgBounds) })}
+              >
+                <Grid2X2 size={14} /> Square
+              </button>
+              <button
+                className={`flex-1! flex items-center justify-center gap-1.5 h-8! text-xs! rounded-md! ${scene.gridType === "hex" ? "bg-gold-500! text-gray-800!" : ""}`}
+                onClick={() => onChange({ ...scene, gridType: "hex", ...withDims(scene.cellSize, "hex", scene.bgBounds) })}
+              >
+                <Hexagon size={14} /> Hex
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={12}
+                max={80}
+                step={1}
+                value={scene.cellSize}
+                onChange={(e) => { const cs = Number(e.target.value); onChange({ ...scene, cellSize: cs, ...withDims(cs, scene.gridType, scene.bgBounds) }); }}
+                className="flex-1 accent-gold-500 cursor-pointer"
+              />
+              <span className="text-gold-500 text-xs font-medium w-10 text-right">{scene.cellSize}px</span>
+            </div>
+          </div>
+          {/* BG section */}
+          <div className="px-3 py-2 flex flex-col gap-1.5">
+            <span className="text-gold-600 text-[10px] font-semibold uppercase tracking-wider">Background</span>
+            <div className="flex gap-1">
+              <button
+                className="flex-1! h-8! text-xs! flex items-center justify-center gap-1.5 rounded-md!"
+                onClick={() => bgInputRef.current?.click()}
+              >
+                <ImagePlus size={14} /> {scene.bg ? "Replace" : "Set"}
+              </button>
+              {scene.bg && (
+                <button
+                  className="flex-1! h-8! text-xs! flex items-center justify-center gap-1.5 rounded-md! text-red-300!"
+                  onClick={() => onChange({ ...scene, bg: undefined, bgBounds: undefined, ...withDims(scene.cellSize, scene.gridType, undefined) })}
+                >
+                  <X size={14} /> Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
