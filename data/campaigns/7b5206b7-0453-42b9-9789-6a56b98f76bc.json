@@ -1,0 +1,36 @@
+{
+  "id": "7b5206b7-0453-42b9-9789-6a56b98f76bc",
+  "title": "Campaña cul uwu",
+  "description": "Esta es una campaña cul, yipiiiiie",
+  "tags": [],
+  "color": "#1a1f2d",
+  "image": null,
+  "scenes": [
+    "d0fcfaeb-5340-4e0e-81b5-921db1c5918f",
+    "3c3b863d-fc6e-4e93-a51d-4d68af4491bb"
+  ],
+  "sceneMap": [
+    {
+      "id": "3c3b863d-fc6e-4e93-a51d-4d68af4491bb",
+      "x": 25.0,
+      "y": 40.0,
+      "connections": {
+        "top": null,
+        "right": "d0fcfaeb-5340-4e0e-81b5-921db1c5918f",
+        "bottom": null,
+        "left": null
+      }
+    },
+    {
+      "id": "d0fcfaeb-5340-4e0e-81b5-921db1c5918f",
+      "x": 215.0,
+      "y": -42.5,
+      "connections": {
+        "top": null,
+        "right": null,
+        "bottom": null,
+        "left": "3c3b863d-fc6e-4e93-a51d-4d68af4491bb"
+      }
+    }
+  ]
+}

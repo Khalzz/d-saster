@@ -1,5 +1,12 @@
 import { Trash2 } from "lucide-react";
 
+export interface SceneNode {
+  id: string;
+  x: number;
+  y: number;
+  connections: { top?: string; right?: string; bottom?: string; left?: string };
+}
+
 export interface Campaign {
   id: string;
   title: string;
@@ -8,6 +15,7 @@ export interface Campaign {
   color: string;
   image?: string;
   scenes?: string[];
+  sceneMap?: SceneNode[];
 }
 
 const PRESET_COLORS = [

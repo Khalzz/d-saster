@@ -60,6 +60,23 @@ fn list_scenes() -> Result<Vec<SceneData>, String> {
     Ok(scenes)
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct SceneNodeConnections {
+    top: Option<String>,
+    right: Option<String>,
+    bottom: Option<String>,
+    left: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct SceneNode {
+    id: String,
+    x: f64,
+    y: f64,
+    connections: SceneNodeConnections,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CampaignData {
@@ -70,6 +87,7 @@ struct CampaignData {
     color: String,
     image: Option<String>,
     scenes: Option<Vec<String>>,
+    scene_map: Option<Vec<SceneNode>>,
 }
 
 fn campaigns_dir() -> Result<PathBuf, String> {

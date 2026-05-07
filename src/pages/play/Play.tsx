@@ -1,26 +1,14 @@
-import { Backpack, Map, Menu, User, X } from "lucide-react";
+import { Backpack, Map, Menu, User } from "lucide-react";
 import { Dropdown, Option } from "../../components/ui/dropdown/Dropdown";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
-import HexGrid from "../../components/game/HexGrid";
 import PlayCanvas from "../../components/game/PlayCanvas";
-import { Scene, DEFAULT_CELL_SIZE } from "../../components/game/SceneEditor";
+import { Scene } from "../../components/game/SceneEditor";
 import PlayersDisplay from "../../components/game/PlayersDisplay";
 import GlobalSearchBar from "../../components/GlobalSearchBar";
+import SceneMapCanvas from "../../components/game/SceneMapCanvas";
 import type { Campaign } from "../../components/campaign/CampaignSelector";
-
-interface SavedSceneData {
-  id: string;
-  name: string;
-  gridType: string;
-  cols: number;
-  rows: number;
-  disabledCells: string[];
-  bg?: string;
-  bgBounds?: { w: number; h: number };
-  cellSize?: number;
-}
 
 export default function Play() {
   const [activeScene, setActiveScene] = useState<Scene | null>(null);
@@ -71,6 +59,8 @@ export default function Play() {
   );
 }
 
+type SideTab = "scenes" | "characters" | "items";
+
 function SideMenu({
   campaign, setActiveScene, activeScene,
 }: {
@@ -78,74 +68,96 @@ function SideMenu({
   setActiveScene: (scene: Scene) => void;
   activeScene: Scene | null;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<SideTab | null>(null);
+  const [width, setWidth] = useState(500);
+  const resizing = useRef(false);
+  const startX = useRef(0);
+  const startW = useRef(0);
+
+  const toggle = (tab: SideTab) =>
+    setActiveTab(prev => (prev === tab ? null : tab));
+
+  const isOpen = activeTab !== null;
+
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    resizing.current = true;
+    startX.current = e.clientX;
+    startW.current = width;
+
+    const onMove = (ev: MouseEvent) => {
+      if (!resizing.current) return;
+      const delta = startX.current - ev.clientX; // dragging left = bigger
+      const minW = Math.round(window.innerWidth * 0.2);
+      const maxW = Math.round(window.innerWidth * 0.5);
+      setWidth(Math.max(minW, Math.min(startW.current + delta, maxW)));
+    };
+    const onUp = () => {
+      resizing.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [width]);
+
+  const onResizeDoubleClick = useCallback(() => {
+    const minW = Math.round(window.innerWidth * 0.2);
+    const maxW = Math.round(window.innerWidth * 0.5);
+    setWidth(prev => prev < maxW ? maxW : minW);
+  }, []);
 
   return (
     <>
-      <div className="p-4 flex flex-col gap-2 text-gold-400 h-fit">
-        <button onClick={() => setIsOpen(!isOpen)}><ToggledIcon baseIcon={<Map className="h-5 w-5" />} secundaryIcon={<X className="h-5 w-5" />} state={isOpen} /></button>
-        {
-          /*
-            <button><User className="h-5 w-5 text-gold-400" /></button>
-            <button><Backpack className="h-5 w-5 text-gold-400" /></button>
-          */
-        }
+      <div className="p-4 flex flex-col gap-2 text-gold-400 h-fit pointer-events-auto">
+        <SideTabButton icon={<Map className="h-5 w-5" />} active={activeTab === "scenes"} onClick={() => toggle("scenes")} />
+        <SideTabButton icon={<User className="h-5 w-5" />} active={activeTab === "characters"} onClick={() => toggle("characters")} />
+        <SideTabButton icon={<Backpack className="h-5 w-5" />} active={activeTab === "items"} onClick={() => toggle("items")} />
       </div>
-      <div className={`h-full bg-base border-gold-500/40 ${isOpen ? "w-125 border-l" : "w-0 border-l-0"} transition-width duration-300 overflow-hidden pointer-events-auto`}>
-        <div className="w-125 h-full">
-          <SceneManager campaign={campaign} onSceneSelect={setActiveScene} activeSceneId={activeScene?.id ?? null} />
+      <div
+        className={`h-full bg-base border-gold-500/40 ${isOpen ? "border-l" : "border-l-0"} overflow-hidden pointer-events-auto relative`}
+        style={{ width: isOpen ? width : 0, transition: isOpen ? undefined : "width 0.3s" }}
+      >
+        {/* Resize handle */}
+        {isOpen && (
+          <div
+            className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize z-10 hover:bg-gold-400/20 active:bg-gold-400/30 transition-colors"
+            onMouseDown={onResizeStart}
+            onDoubleClick={onResizeDoubleClick}
+            title="Drag to resize · Double-click to toggle"
+          />
+        )}
+        <div className="h-full" style={{ width }}>
+          {activeTab === "scenes" && (
+            <SceneManager campaign={campaign} onSceneSelect={setActiveScene} activeSceneId={activeScene?.id ?? null} />
+          )}
+          {activeTab === "characters" && (
+            <CharactersPanel campaign={campaign} />
+          )}
+          {activeTab === "items" && (
+            <ItemsPanel campaign={campaign} />
+          )}
         </div>
       </div>
     </>);
 }
 
-function ToggledIcon(
-  {
-    baseIcon,
-    secundaryIcon,
-    state
-  }: {
-    baseIcon: React.ReactNode;
-    secundaryIcon: React.ReactNode;
-    state: boolean;
-  }
-) {
+function SideTabButton({ icon, active, onClick }: { icon: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
-    <div className="h-5 w-5 relative">
-      <div className={`absolute inset-0 transition-opacity duration-300 ${state ? "opacity-0" : "opacity-100"}`}>
-        {baseIcon}
-      </div>
-      <div className={`absolute inset-0 transition-opacity duration-300 ${state ? "opacity-100" : "opacity-0"}`}>
-        {secundaryIcon}
-      </div>
-    </div>
+    <button
+      onClick={onClick}
+      className={`p-1 rounded transition-colors ${active ? "text-gold-300 bg-gold-500/20" : "text-gold-600 hover:text-gold-400"}`}
+    >
+      {icon}
+    </button>
   );
 }
 
-function SceneManager({ campaign, onSceneSelect, activeSceneId }: { campaign: Campaign | null; onSceneSelect: (scene: Scene) => void; activeSceneId: string | null }) {
-  const [campaignScenes, setCampaignScenes] = useState<SavedSceneData[]>([]);
-
-  useEffect(() => {
-    if (!campaign?.scenes?.length) { setCampaignScenes([]); return; }
-    invoke<SavedSceneData[]>("list_scenes").then(all =>
-      setCampaignScenes(all.filter(s => campaign.scenes!.includes(s.id)))
-    ).catch(() => {});
-  }, [campaign]);
-
-  const loadScene = (s: SavedSceneData) => {
-    onSceneSelect({
-      id: s.id,
-      name: s.name,
-      gridType: s.gridType as "hex" | "square",
-      cols: s.cols,
-      rows: s.rows,
-      disabledCells: new Set(s.disabledCells),
-      bg: s.bg,
-      bgBounds: s.bgBounds,
-      cellSize: s.cellSize ?? DEFAULT_CELL_SIZE,
-    });
-  };
-
+function CharactersPanel({ campaign }: { campaign: Campaign | null }) {
   if (!campaign) return (
     <div className="w-full h-full flex items-center justify-center">
       <p className="text-gold-700 text-sm">No campaign loaded.</p>
@@ -155,45 +167,44 @@ function SceneManager({ campaign, onSceneSelect, activeSceneId }: { campaign: Ca
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex items-center gap-2.5 px-4 py-4 border-b border-gold-500/20">
-        <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: campaign.color }} />
-        <p className="text-gold-400 font-medium text-sm truncate">{campaign.title}</p>
+        <User className="h-4 w-4 text-gold-400" />
+        <p className="text-gold-400 font-medium text-sm">Characters</p>
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
-        {campaignScenes.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2">
-            {campaignScenes.map(s => {
-              const isActive = s.id === activeSceneId;
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => loadScene(s)}
-                  className={`cursor-pointer rounded-lg overflow-hidden border transition-all hover:scale-[1.02] select-none ${isActive ? "border-gold-400/60" : "border-gold-500/10 hover:border-gold-500/50"}`}
-                >
-                  <div className="h-24 w-full bg-[#121212] relative flex items-center justify-center">
-                    {s.bg
-                      ? <img src={s.bg} alt="" className="w-full h-full object-cover" />
-                      : <Map className="h-6 w-6 text-gold-800" />
-                    }
-                    <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
-                    {isActive && (
-                      <span className="absolute top-1.5 left-1.5 text-[9px] font-semibold uppercase tracking-wider bg-gold-400/90 text-black px-1.5 py-0.5 rounded">Active</span>
-                    )}
-                  </div>
-                  <div className="px-2.5 py-2 bg-surface">
-                    <p className="text-gold-400 text-xs font-medium truncate">{s.name}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-gold-700 text-xs px-3 py-2">
-            No scenes added to this campaign yet. Use the search bar to add scenes.
-          </p>
-        )}
+      <div className="flex-1 overflow-y-auto p-4">
+        <p className="text-gold-700 text-xs">No characters added yet.</p>
       </div>
     </div>
   );
+}
+
+function ItemsPanel({ campaign }: { campaign: Campaign | null }) {
+  if (!campaign) return (
+    <div className="w-full h-full flex items-center justify-center">
+      <p className="text-gold-700 text-sm">No campaign loaded.</p>
+    </div>
+  );
+
+  return (
+    <div className="w-full h-full flex flex-col">
+      <div className="flex items-center gap-2.5 px-4 py-4 border-b border-gold-500/20">
+        <Backpack className="h-4 w-4 text-gold-400" />
+        <p className="text-gold-400 font-medium text-sm">Items</p>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        <p className="text-gold-700 text-xs">No items added yet.</p>
+      </div>
+    </div>
+  );
+}
+
+function SceneManager({ campaign, onSceneSelect, activeSceneId }: { campaign: Campaign | null; onSceneSelect: (scene: Scene) => void; activeSceneId: string | null }) {
+  if (!campaign) return (
+    <div className="w-full h-full flex items-center justify-center">
+      <p className="text-gold-700 text-sm">No campaign loaded.</p>
+    </div>
+  );
+
+  return <SceneMapCanvas campaign={campaign} onSceneSelect={onSceneSelect} activeSceneId={activeSceneId} />;
 }
 
 function ExpandableMenu({

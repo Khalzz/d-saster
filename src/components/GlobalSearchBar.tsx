@@ -47,12 +47,15 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const addSceneToCampaign = (campaign: Campaign, scene?: SavedScene) => {
+  const addSceneToCampaign = async (campaign: Campaign, scene?: SavedScene) => {
     const target = scene ?? pendingAddScene;
     if (!target) return;
-    const sceneIds = campaign.scenes ?? [];
+    // Fetch latest campaign from disk to avoid overwriting sceneMap changes
+    const allCampaigns = await invoke<Campaign[]>("list_campaigns").catch(() => [] as Campaign[]);
+    const latest = allCampaigns.find(c => c.id === campaign.id) ?? campaign;
+    const sceneIds = latest.scenes ?? [];
     if (sceneIds.includes(target.id)) { setPendingAddScene(null); return; }
-    const updated: Campaign = { ...campaign, scenes: [...sceneIds, target.id] };
+    const updated: Campaign = { ...latest, scenes: [...sceneIds, target.id] };
     setSavedCampaigns(prev => prev.map(c => c.id === campaign.id ? updated : c));
     invoke("save_campaign", { campaign: updated }).catch(() => {});
     window.dispatchEvent(new CustomEvent("campaign-updated"));
