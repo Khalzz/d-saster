@@ -15,12 +15,14 @@ interface ExistingScene {
   bg?: string;
   bgBounds?: { w: number; h: number };
   cellSize?: number;
+  lastEdited?: string;
+  lastEditor?: string;
 }
 
 export default function SceneEditor() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { name?: string; bg?: string; existing?: ExistingScene } | null;
+  const state = location.state as { name?: string; bg?: string; existing?: ExistingScene; campaignId?: string } | null;
 
   const [scene, setScene] = useState<Scene>(() => {
     if (state?.existing) {
@@ -35,6 +37,8 @@ export default function SceneEditor() {
         bg: e.bg,
         bgBounds: e.bgBounds,
         cellSize: e.cellSize ?? DEFAULT_CELL_SIZE,
+        lastEdited: e.lastEdited,
+        lastEditor: e.lastEditor,
       };
     }
     return {
@@ -72,12 +76,24 @@ export default function SceneEditor() {
         bg: s.bg,
         bgBounds: s.bgBounds,
         cellSize: s.cellSize,
+        lastEdited: new Date().toISOString(),
+        lastEditor: s.lastEditor ?? "DM",
       },
     });
   };
 
-  const handleBack = () => {
-    saveScene(sceneRef.current);
+  const handleBack = async () => {
+    const s = sceneRef.current;
+    saveScene(s);
+    if (state?.campaignId && !state?.existing) {
+      const allCampaigns = await invoke<{ id: string; scenes?: string[] }[]>("list_campaigns").catch(() => []);
+      const campaign = allCampaigns.find(c => c.id === state.campaignId);
+      if (campaign && !campaign.scenes?.includes(s.id)) {
+        const updated = { ...campaign, scenes: [...(campaign.scenes ?? []), s.id] };
+        invoke("save_campaign", { campaign: updated }).catch(() => {});
+        window.dispatchEvent(new Event("campaign-updated"));
+      }
+    }
     toast("Saved");
     navigate(-1);
   };

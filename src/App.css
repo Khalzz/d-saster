@@ -56,17 +56,17 @@
   --color-blue-950: #070910;
 
   /* ── RED ── */
-  --color-red-50:  #f5ecea;
-  --color-red-100: #e0ccca;
-  --color-red-200: #c29d9a;
-  --color-red-300: #a87a76;
-  --color-red-400: #8a5a58;     /* light — aged rust */
-  --color-red-500: #6e3e3c;
-  --color-red-600: #542e2c;
-  --color-red-700: #3e2020;
-  --color-red-800: #2a1515;     /* base — dried blood */
-  --color-red-900: #180c0c;
-  --color-red-950: #0a0505;
+  --color-red-50:  #fef2f0;
+  --color-red-100: #fde0dc;
+  --color-red-200: #f9b8b0;
+  --color-red-300: #f28478;     /* light — text/icons */
+  --color-red-400: #e85548;     /* hover states */
+  --color-red-500: #621f1f;    /* main highlight — warm crimson */
+  --color-red-600: #b02d23;
+  --color-red-700: #832019;
+  --color-red-800: #4f1410;     /* deep background */
+  --color-red-900: #290a08;
+  --color-red-950: #140403;
 
   --color-purple: #2a1f3d;
   --color-purple-light: #7a6a8a;
@@ -90,6 +90,21 @@
           transition-all cursor-pointer select-none
           ring-0 active:ring active:ring-gold-500 flex items-center justify-center;
   }
+}
+
+.field-input {
+  background-color: var(--color-base);
+  border: 1px solid color-mix(in srgb, var(--color-gold-500) 30%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--color-gold-200);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.field-input:focus {
+  border-color: color-mix(in srgb, var(--color-gold-500) 60%, transparent);
 }
 
 html, body, #root {

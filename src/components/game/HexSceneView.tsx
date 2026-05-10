@@ -277,11 +277,11 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
             {scene.bg && (
               <image
                 href={scene.bg}
-                x={0}
-                y={0}
-                width={cellCoverW}
-                height={cellCoverH}
-                preserveAspectRatio="xMidYMid slice"
+                x={scene.bgBounds ? (cellCoverW - scene.bgBounds.w / gridFit) / 2 : 0}
+                y={scene.bgBounds ? (cellCoverH - scene.bgBounds.h / gridFit) / 2 : 0}
+                width={scene.bgBounds ? scene.bgBounds.w / gridFit : cellCoverW}
+                height={scene.bgBounds ? scene.bgBounds.h / gridFit : cellCoverH}
+                preserveAspectRatio="none"
               />
             )}
             {cells}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Map, Crosshair, Mouse, MousePointerClick, Pencil } from "lucide-react";
+import { Map, Crosshair, Mouse, MousePointerClick, Pencil, Trash2 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Campaign, SceneNode } from "../campaign/CampaignSelector";
 import type { Scene } from "./SceneEditor";
@@ -16,6 +16,8 @@ interface SavedSceneData {
   bg?: string;
   bgBounds?: { w: number; h: number };
   cellSize?: number;
+  lastEdited?: string;
+  lastEditor?: string;
 }
 
 type Direction = "top" | "right" | "bottom" | "left";
@@ -54,19 +56,20 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
   const [zoom, setZoom] = useState(1);
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [panning, setPanning] = useState<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
   const [connecting, setConnecting] = useState<{ fromId: string; fromDir: Direction; mouseX: number; mouseY: number } | null>(null);
+  const [pendingConnect, setPendingConnect] = useState<{ fromId: string; fromDir: Direction; startClientX: number; startClientY: number } | null>(null);
   const hasFittedRef = useRef(false);
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
   const panningRef = useRef(panning);
   panningRef.current = panning;
 
-  // Load scene data
+  // Load campaign scenes
   useEffect(() => {
-    if (!campaign.scenes?.length) { setScenes([]); return; }
     invoke<SavedSceneData[]>("list_scenes").then(all =>
-      setScenes(all.filter(s => campaign.scenes!.includes(s.id)))
+      setScenes(all.filter(s => (campaign.scenes ?? []).includes(s.id)))
     ).catch(() => {});
   }, [campaign]);
 
@@ -145,6 +148,20 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
         y: panning.panY + (e.clientY - panning.startY),
       });
     }
+    if (pendingConnect) {
+      const dx = e.clientX - pendingConnect.startClientX;
+      const dy = e.clientY - pendingConnect.startClientY;
+      if (dx * dx + dy * dy > 25) {
+        const rect = containerRef.current!.getBoundingClientRect();
+        setPendingConnect(null);
+        setConnecting({
+          fromId: pendingConnect.fromId,
+          fromDir: pendingConnect.fromDir,
+          mouseX: (e.clientX - rect.left - pan.x) / zoom,
+          mouseY: (e.clientY - rect.top - pan.y) / zoom,
+        });
+      }
+    }
     if (connecting) {
       const rect = containerRef.current!.getBoundingClientRect();
       setConnecting({
@@ -161,20 +178,20 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
       setDragging(null);
     }
     if (panning) setPanning(null);
+    setPendingConnect(null);
     setConnecting(null);
   };
 
   const handlePortMouseDown = (e: React.MouseEvent, nodeId: string, dir: Direction) => {
+    if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
     const node = nodes.find(n => n.id === nodeId)!;
-    const port = PORT_OFFSETS[dir];
-    setConnecting({
-      fromId: nodeId,
-      fromDir: dir,
-      mouseX: node.x + port.x,
-      mouseY: node.y + port.y,
-    });
+    if (node.connections[dir]) {
+      removeConnection(nodeId, dir);
+      return;
+    }
+    setPendingConnect({ fromId: nodeId, fromDir: dir, startClientX: e.clientX, startClientY: e.clientY });
   };
 
   const areAlreadyConnected = (idA: string, idB: string) => {
@@ -222,7 +239,9 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
       }
       if (n.id === targetId) {
         const conns = { ...n.connections };
-        if (conns[OPPOSITE[dir]] === nodeId) delete conns[OPPOSITE[dir]];
+        (Object.keys(conns) as Direction[]).forEach(d => {
+          if (conns[d] === nodeId) delete conns[d];
+        });
         return { ...n, connections: conns };
       }
       return n;
@@ -300,6 +319,8 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
       bg: s.bg,
       bgBounds: s.bgBounds,
       cellSize: s.cellSize ?? DEFAULT_CELL_SIZE,
+      lastEdited: s.lastEdited,
+      lastEditor: s.lastEditor,
     });
   };
 
@@ -307,6 +328,28 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
 
   const editScene = (sceneData: SavedSceneData) => {
     navigate("/scene-editor", { state: { existing: sceneData } });
+  };
+
+  const deleteScene = async (id: string) => {
+    await invoke("delete_scene", { id }).catch(() => {});
+    const updatedNodes = nodes
+      .filter(n => n.id !== id)
+      .map(n => {
+        const conns = { ...n.connections };
+        (Object.keys(conns) as Direction[]).forEach(dir => {
+          if (conns[dir] === id) delete conns[dir];
+        });
+        return { ...n, connections: conns };
+      });
+    const updatedScenes = (campaign.scenes ?? []).filter(s => s !== id);
+    const updatedCampaign = { ...campaign, sceneMap: updatedNodes, scenes: updatedScenes };
+    invoke("save_campaign", { campaign: updatedCampaign }).then(() => {
+      window.dispatchEvent(new Event("campaign-updated"));
+    }).catch(() => {});
+    setNodes(updatedNodes);
+    setScenes(prev => prev.filter(s => s.id !== id));
+    setPendingDelete(null);
+    setContextMenu(null);
   };
 
   const handleNodeContextMenu = (e: React.MouseEvent, nodeId: string) => {
@@ -362,11 +405,8 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
   return (
     <div className="flex flex-col w-full h-full">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-gold-500/20 shrink-0">
+      <div className="flex items-center justify-between p-2 pl-4 border-b border-gold-500/20 shrink-0">
         <p className="text-gold-400 font-medium text-sm">Scene Map</p>
-        <div className="flex gap-1">
-          <button onClick={fitView} className="p-1 text-gold-600 hover:text-gold-400" title="Center"><Crosshair className="h-3.5 w-3.5" /></button>
-        </div>
       </div>
 
       {/* Canvas */}
@@ -378,8 +418,8 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* Compass Rose */}
-        <CompassRose rotation={0} />
+        {/* Center button */}
+        <button onClick={fitView} className="absolute bottom-3 right-3 z-10 p-1.5 text-gold-600 hover:text-gold-400 bg-base/80 rounded" title="Center"><Crosshair className="h-4 w-4" /></button>
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ overflow: "visible" }}
@@ -443,7 +483,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
                     <div
                       key={dir}
                       className={`absolute w-3 h-3 rounded-full border-2 transition-colors ${
-                        hasConnection ? "bg-gold-400 border-gold-300" : "bg-[#1a1a1a] border-gold-600/50 hover:border-gold-400"
+                        hasConnection ? "bg-gold-400 border-gold-300 hover:bg-red-500 hover:border-red-400 cursor-pointer" : "bg-[#1a1a1a] border-gold-600/50 hover:border-gold-400"
                       }`}
                       style={{
                         left: PORT_OFFSETS[dir].x - PORT_RADIUS,
@@ -451,8 +491,8 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
                       }}
                       onMouseDown={(e) => handlePortMouseDown(e, node.id, dir)}
                       onMouseUp={(e) => handlePortMouseUp(e, node.id, dir)}
-                      onContextMenu={(e) => { e.preventDefault(); removeConnection(node.id, dir); }}
-                      title={hasConnection ? `Connected to: ${getSceneName(node.connections[dir]!)} (right-click to remove)` : `Drag to connect ${dir}`}
+                      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      title={hasConnection ? `Connected to: ${getSceneName(node.connections[dir]!)} (click to disconnect)` : `Drag to connect ${dir}`}
                     />
                   );
                 })}
@@ -482,7 +522,45 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
                 >
                   <Pencil className="h-3.5 w-3.5" /> Edit Scene
                 </div>
+                <div
+                  className="px-4 py-2 hover:bg-red-500/10 cursor-pointer transition-colors flex items-center gap-2 text-red-400 border-t border-gold-500/20"
+                  onClick={() => { setPendingDelete(contextMenu.nodeId); setContextMenu(null); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete Scene
+                </div>
               </div>
+          );
+        })()}
+
+        {/* Delete confirmation modal */}
+        {pendingDelete && (() => {
+          const sceneName = getSceneName(pendingDelete);
+          return (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60">
+              <div className="bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 p-6 w-80 flex flex-col gap-4">
+                <div className="flex items-center gap-2 text-red-400">
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  <p className="font-semibold text-sm">Delete Scene</p>
+                </div>
+                <p className="text-gold-400 text-xs">
+                  Are you sure you want to delete <span className="font-semibold text-gold-200">"{sceneName}"</span> from this campaign?
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    className="px-3 py-1.5 text-xs text-gold-400 hover:text-gold-200 transition-colors"
+                    onClick={() => setPendingDelete(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-3 py-1.5 text-xs text-red-500 rounded border border-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                    onClick={() => deleteScene(pendingDelete)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
           );
         })()}
 
@@ -508,7 +586,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
         </div>
         <div className="flex items-center gap-1">
           <Mouse className="h-3 w-3 text-gold-600" />
-          <span className="text-gold-700 text-[9px]">R-click to disconnect</span>
+          <span className="text-gold-700 text-[9px]">Click port to disconnect</span>
         </div>
         <div className="flex items-center gap-1">
           <Mouse className="h-3 w-3 text-gold-600" />
@@ -519,32 +597,4 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
   );
 }
 
-/**
- * Modular compass rose component.
- * `rotation` controls which direction is "up" (0 = N up, 90 = E up, 180 = S up, 270 = W up).
- * Can be updated dynamically based on player viewing direction.
- */
-function CompassRose({ rotation = 0 }: { rotation?: number }) {
-  return (
-    <div
-      className="absolute bottom-3 left-3 z-10 w-16 h-16 select-none pointer-events-none"
-      style={{ transform: `rotate(${rotation}deg)` }}
-    >
-      <div className="relative w-full h-full">
-        {/* Cardinal labels — outside the circle */}
-        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-gold-400">N</span>
-        <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[9px] font-medium text-gold-700">S</span>
-        <span className="absolute top-1/2 right-0.5 -translate-y-1/2 text-[9px] font-medium text-gold-700">E</span>
-        <span className="absolute top-1/2 left-0.5 -translate-y-1/2 text-[9px] font-medium text-gold-700">W</span>
-        {/* Outer ring */}
-        <div className="absolute inset-3 rounded-full border border-gold-500/30" />
-        {/* Center dot */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold-500/60" />
-        {/* Needle north */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-px h-3 bg-gold-400" />
-        {/* Needle south */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-px h-3 bg-gold-700/50" />
-      </div>
-    </div>
-  );
-}
+

@@ -6,6 +6,8 @@ import { Plus, Trash2 } from "lucide-react";
 export interface SearchCategoryItem {
   label: string;
   id?: string;
+  image?: string;
+  description?: string;
 }
 
 export interface SearchCategory {
@@ -102,6 +104,8 @@ export default function SearchBar({ isOpen, onClose, categories, placeholder = "
             count={cat.filteredItems.length}
             items={cat.filteredItems.map(item => ({
               label: item.label,
+              image: item.image,
+              description: item.description,
               onClick: cat.onSelect ? () => { cat.onSelect!(item); onClose(); } : undefined,
               onEdit: cat.onEdit ? () => { cat.onEdit!(item); onClose(); } : undefined,
               onDelete: cat.onDelete ? () => setPendingDelete({ item, cat }) : undefined,

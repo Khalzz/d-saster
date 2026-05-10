@@ -14,6 +14,8 @@ export interface Scene {
   bg?: string;
   bgBounds?: { w: number; h: number };
   cellSize: number;
+  lastEdited?: string;
+  lastEditor?: string;
 }
 
 interface SceneEditorProps {
@@ -71,6 +73,22 @@ export default function SceneEditor({ scene, onChange }: SceneEditorProps) {
     reader.readAsDataURL(file);
     e.target.value = "";
   };
+
+  // If bg is set but bgBounds is missing (e.g. new scene via navigation), load the image to get its natural dimensions
+  useEffect(() => {
+    const s = sceneRef.current;
+    if (s.bg && !s.bgBounds) {
+      const img = new Image();
+      img.onload = () => {
+        const cur = sceneRef.current;
+        if (cur.bgBounds) return; // already resolved
+        const snapshot = { w: img.naturalWidth, h: img.naturalHeight };
+        const dims = computeDims(snapshot.w, snapshot.h, cur.cellSize, cur.gridType);
+        onChangeRef.current({ ...cur, bgBounds: snapshot, ...dims });
+      };
+      img.src = s.bg;
+    }
+  }, []);
 
   // Initial sizing on mount and container resize
   useEffect(() => {

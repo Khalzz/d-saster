@@ -3,6 +3,8 @@ import { Pencil, Trash2 } from "lucide-react";
 
 interface ExpandableItem {
   label: string;
+  image?: string;
+  description?: string;
   onClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -49,8 +51,18 @@ export default function Expandable({ name, icon, count, items, defaultOpen = fal
             className="hover:bg-gold-900 w-full h-fit cursor-pointer transition-colors p-2 px-6 flex justify-between items-center group"
             onClick={item.onClick}
           >
-            <span className="truncate flex-1">{item.label}</span>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              {item.image && (
+                <img src={item.image} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="truncate">{item.label}</span>
+                {item.description && (
+                  <span className="text-gold-700 text-xs truncate">{item.description}</span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
               {item.onEdit && (
                 <div
                   className="text-gold-500 hover:text-gold-300 cursor-pointer p-1"

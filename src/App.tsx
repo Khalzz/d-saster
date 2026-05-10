@@ -4,6 +4,7 @@ import Play from "./pages/play/Play";
 import CampaignSelection from "./pages/campaign/Campaign";
 import Login from "./pages/login/Login";
 import SceneEditor from "./pages/scene/scene-editor";
+import CharacterEditor from "./pages/character/character-editor";
 function App() {
   return (
     <BrowserRouter>
@@ -12,6 +13,7 @@ function App() {
         <Route path="/play" element={<Play />} />
         <Route path="/campaign" element={<CampaignSelection />} />
         <Route path="/scene-editor" element={<SceneEditor />} />
+        <Route path="/character-editor" element={<CharacterEditor />} />
       </Routes>
     </BrowserRouter>
   );

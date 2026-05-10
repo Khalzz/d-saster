@@ -40,6 +40,10 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
     ? Math.max(scene.bgBounds.w / cellCoverW, scene.bgBounds.h / cellCoverH)
     : 1;
   gridFitRef.current = gridFit;
+  const naturalBoundsRef = useRef(naturalBounds);
+  naturalBoundsRef.current = naturalBounds;
+  const bgBoundsRef = useRef(scene.bgBounds);
+  bgBoundsRef.current = scene.bgBounds;
 
   const hasBg = !!scene.bgBounds;
 
@@ -73,7 +77,13 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
       const delta = e.deltaY * (e.deltaMode === 2 ? 400 : e.deltaMode === 1 ? 16 : 1);
       const factor = e.ctrlKey ? Math.pow(0.99, e.deltaY) : Math.pow(0.999, delta);
       const c = camRef.current;
-      const nz = Math.max(0.3, Math.min(4, c.zoom * factor));
+      const nb = naturalBoundsRef.current;
+      const gf = gridFitRef.current;
+      const bgB = bgBoundsRef.current;
+      const contentW = bgB ? bgB.w : nb.w * gf;
+      const contentH = bgB ? bgB.h : nb.h * gf;
+      const minZoom = Math.min(el.clientWidth / contentW, el.clientHeight / contentH) * 0.85;
+      const nz = Math.max(minZoom, Math.min(4, c.zoom * factor));
       camRef.current = { x: mx - (mx - c.x) * (nz / c.zoom), y: my - (my - c.y) * (nz / c.zoom), zoom: nz };
       applyTransform();
     };
@@ -148,11 +158,11 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
             {scene.bg && (
               <image
                 href={scene.bg}
-                x={0}
-                y={0}
-                width={cellCoverW}
-                height={cellCoverH}
-                preserveAspectRatio="xMidYMid slice"
+                x={scene.bgBounds ? (cellCoverW - scene.bgBounds.w / gridFit) / 2 : 0}
+                y={scene.bgBounds ? (cellCoverH - scene.bgBounds.h / gridFit) / 2 : 0}
+                width={scene.bgBounds ? scene.bgBounds.w / gridFit : cellCoverW}
+                height={scene.bgBounds ? scene.bgBounds.h / gridFit : cellCoverH}
+                preserveAspectRatio="none"
               />
             )}
             {cells}

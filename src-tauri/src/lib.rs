@@ -14,6 +14,8 @@ struct SceneData {
     bg: Option<String>,
     bg_bounds: Option<BgBounds>,
     cell_size: Option<u32>,
+    last_edited: Option<String>,
+    last_editor: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -146,11 +148,88 @@ fn delete_campaign(id: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Serialize, Deserialize)]
+struct CharacterStats {
+    #[serde(rename = "str")]
+    strength: u32,
+    dex: u32,
+    con: u32,
+    #[serde(rename = "int")]
+    intelligence: u32,
+    wis: u32,
+    cha: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CharacterData {
+    id: String,
+    name: String,
+    description: String,
+    origin: String,
+    race: String,
+    image: Option<String>,
+    #[serde(rename = "type")]
+    character_type: String,
+    stats: CharacterStats,
+}
+
+fn characters_dir() -> Result<PathBuf, String> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("could not resolve project root")?
+        .to_path_buf();
+    Ok(root.join("data").join("characters"))
+}
+
+#[tauri::command]
+fn save_character(character: CharacterData) -> Result<(), String> {
+    let dir = characters_dir()?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("{}.json", character.id));
+    let json = serde_json::to_string_pretty(&character).map_err(|e| e.to_string())?;
+    fs::write(path, json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_characters() -> Result<Vec<CharacterData>, String> {
+    let dir = characters_dir()?;
+    if !dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut characters = vec![];
+    for entry in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+        let path = entry.map_err(|e| e.to_string())?.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        match serde_json::from_str::<CharacterData>(&content) {
+            Ok(c) => characters.push(c),
+            Err(_) => continue,
+        }
+    }
+    Ok(characters)
+}
+
+#[tauri::command]
+fn delete_character(id: String) -> Result<(), String> {
+    let path = characters_dir()?.join(format!("{}.json", id));
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![save_scene, list_scenes, delete_scene, save_campaign, list_campaigns, delete_campaign])
+        .invoke_handler(tauri::generate_handler![
+            save_scene, list_scenes, delete_scene,
+            save_campaign, list_campaigns, delete_campaign,
+            save_character, list_characters, delete_character
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

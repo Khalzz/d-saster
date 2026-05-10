@@ -5,6 +5,7 @@ import { Backpack, ImagePlus, Map, User, X } from "lucide-react";
 import Modal from "./ui/modal/Modal";
 import SearchBar from "./ui/searchbar/SearchBar";
 import type { Campaign } from "./campaign/CampaignSelector";
+import type { Character } from "../pages/character/character-editor";
 
 interface SavedScene {
   id: string;
@@ -16,13 +17,15 @@ interface SavedScene {
   bg?: string;
   bgBounds?: { w: number; h: number };
   cellSize?: number;
+  lastEdited?: string;
+  lastEditor?: string;
 }
 
 export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: Campaign | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [savedScenes, setSavedScenes] = useState<SavedScene[]>([]);
   const [savedCampaigns, setSavedCampaigns] = useState<Campaign[]>([]);
-  const [characters, setCharacters] = useState<string[]>(["Kelsier", "Vin", "Sazed"]);
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [items, setItems] = useState<string[]>(["Health Potion", "Iron Sword", "Leather Armor", "Magic Scroll"]);
   const [pendingAddScene, setPendingAddScene] = useState<SavedScene | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -34,6 +37,7 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
   useEffect(() => {
     invoke<SavedScene[]>("list_scenes").then(setSavedScenes).catch(() => {});
     invoke<Campaign[]>("list_campaigns").then(setSavedCampaigns).catch(() => {});
+    invoke<Character[]>("list_characters").then(setCharacters).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -72,7 +76,15 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
             {
               name: "Scenes",
               icon: <Map className="h-4 w-4" />,
-              items: savedScenes.map(s => ({ label: s.name, id: s.id })),
+              items: savedScenes.map(s => {
+                const parts: string[] = [];
+                if (s.lastEdited) {
+                  const d = new Date(s.lastEdited);
+                  parts.push("Edited: " + d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }));
+                }
+                if (s.lastEditor) parts.push("By: " + s.lastEditor);
+                return { label: s.name, id: s.id, image: s.bg, description: parts.join(" · ") || undefined };
+              }),
               onCreate: (name) => { setIsOpen(false); setNewSceneName(name); setNewSceneBg(undefined); setShowCreateModal(true); },
               onSelect: (item) => {
                 const scene = savedScenes.find(s => s.id === item.id);
@@ -97,8 +109,19 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
             {
               name: "Characters",
               icon: <User className="h-4 w-4" />,
-              items: characters.map(c => ({ label: c })),
-              onCreate: (name) => setCharacters(prev => [...prev, name]),
+              items: characters.map(c => ({ label: c.name, id: c.id, image: c.image, description: c.race || undefined })),
+              onCreate: (name) => {
+                setIsOpen(false);
+                navigate("/character-editor", { state: { existing: { id: crypto.randomUUID(), name, description: "", origin: "", race: "", type: "player", stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 } } } });
+              },
+              onEdit: (item) => {
+                const character = characters.find(c => c.id === item.id);
+                if (character) { setIsOpen(false); navigate("/character-editor", { state: { existing: character } }); }
+              },
+              onDelete: (item) => {
+                invoke("delete_character", { id: item.id }).catch(() => {});
+                setCharacters(prev => prev.filter(c => c.id !== item.id));
+              },
             },
             {
               name: "Items",
