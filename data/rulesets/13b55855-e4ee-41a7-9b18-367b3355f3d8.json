@@ -1,0 +1,38 @@
+{
+  "id": "13b55855-e4ee-41a7-9b18-367b3355f3d8",
+  "name": "D&D E5",
+  "description": "",
+  "stats": [
+    {
+      "key": "str",
+      "label": "Strength",
+      "description": "It measures **physical power** and **muscle**, governing both the capacity to **lift** and **carry heavy loads** and **the force behind melee strikes**.\n\n*Some example actions who use this are:*\n- Athletics\n- Melee attacks\n- Breaking objects"
+    },
+    {
+      "key": "dex",
+      "label": "Dexterity",
+      "description": "It measures **agility**, **reflexes**, and **balance**, encompassing both **fine motor skills** and **gross motor coordination**.\n\n*Some example actions who use this are:*\n- Acrobatics\n- Stealth\n- Sleight of hand"
+    },
+    {
+      "key": "constitution",
+      "label": "Constitution",
+      "description": "It measures **endurance** and **bodily resilience**, governing the ability to **withstand physical punishment**, **resist disease**, and **push beyond normal limits**.\n\n*Some example actions who use this are:*\n- Holding breath\n- Surviving harsh environments\n- Resisting poison or disease"
+    },
+    {
+      "key": "intelligence",
+      "label": "Intelligence",
+      "description": "It measures **reasoning**, **memory**, and **analytical thinking**, governing the capacity to **recall knowledge**, **solve problems**, and **understand complex systems**.\n\n*Some example actions who use this are:*\n- Arcana & History\n- Investigation\n- Identifying magical items"
+    },
+    {
+      "key": "wisdom",
+      "label": "Wisdom",
+      "description": "It measures **perception**, **intuition**, and **willpower**, **governing awareness of the world** and the ability to **read situations** and **resist mental influence**.\n\n*Some example actions who use this are:*\n- Perception & Insight\n- Survival\n- Medicine"
+    },
+    {
+      "key": "charisma",
+      "label": "Charisma",
+      "description": "It measures **force of personality**, **persuasiveness**, and **social presence**, governing the ability to **influence**, **deceive**, or **inspire** others.\n\n*Some example actions who use this are:*\n- Persuasion & Deception\n- Intimidation\n- Performance"
+    }
+  ],
+  "classes": []
+}

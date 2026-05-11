@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -149,18 +150,6 @@ fn delete_campaign(id: String) -> Result<(), String> {
 }
 
 #[derive(Serialize, Deserialize)]
-struct CharacterStats {
-    #[serde(rename = "str")]
-    strength: u32,
-    dex: u32,
-    con: u32,
-    #[serde(rename = "int")]
-    intelligence: u32,
-    wis: u32,
-    cha: u32,
-}
-
-#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CharacterData {
     id: String,
@@ -168,10 +157,72 @@ struct CharacterData {
     description: String,
     origin: String,
     race: String,
+    class_id: Option<String>,
+    ruleset_id: Option<String>,
     image: Option<String>,
     #[serde(rename = "type")]
     character_type: String,
-    stats: CharacterStats,
+    stats: HashMap<String, i32>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ClassModifier {
+    name: String,
+    value: i32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CharacterClassData {
+    id: String,
+    name: String,
+    modifiers: Vec<ClassModifier>,
+}
+
+fn classes_dir() -> Result<PathBuf, String> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("could not resolve project root")?
+        .to_path_buf();
+    Ok(root.join("data").join("classes"))
+}
+
+#[tauri::command]
+fn save_class(class: CharacterClassData) -> Result<(), String> {
+    let dir = classes_dir()?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("{}.json", class.id));
+    let json = serde_json::to_string_pretty(&class).map_err(|e| e.to_string())?;
+    fs::write(path, json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_classes() -> Result<Vec<CharacterClassData>, String> {
+    let dir = classes_dir()?;
+    if !dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut classes = vec![];
+    for entry in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+        let path = entry.map_err(|e| e.to_string())?.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        match serde_json::from_str::<CharacterClassData>(&content) {
+            Ok(c) => classes.push(c),
+            Err(_) => continue,
+        }
+    }
+    Ok(classes)
+}
+
+#[tauri::command]
+fn delete_class(id: String) -> Result<(), String> {
+    let path = classes_dir()?.join(format!("{}.json", id));
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 fn characters_dir() -> Result<PathBuf, String> {
@@ -221,6 +272,83 @@ fn delete_character(id: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Serialize, Deserialize)]
+struct StatDefinition {
+    key: String,
+    label: String,
+    #[serde(default)]
+    description: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct RulesetClassModifier {
+    name: String,
+    value: i32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct RulesetClass {
+    id: String,
+    name: String,
+    modifiers: Vec<RulesetClassModifier>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct RulesetData {
+    id: String,
+    name: String,
+    description: String,
+    stats: Vec<StatDefinition>,
+    classes: Vec<RulesetClass>,
+}
+
+fn rulesets_dir() -> Result<PathBuf, String> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("could not resolve project root")?
+        .to_path_buf();
+    Ok(root.join("data").join("rulesets"))
+}
+
+#[tauri::command]
+fn save_ruleset(ruleset: RulesetData) -> Result<(), String> {
+    let dir = rulesets_dir()?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("{}.json", ruleset.id));
+    let json = serde_json::to_string_pretty(&ruleset).map_err(|e| e.to_string())?;
+    fs::write(path, json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_rulesets() -> Result<Vec<RulesetData>, String> {
+    let dir = rulesets_dir()?;
+    if !dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut rulesets = vec![];
+    for entry in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+        let path = entry.map_err(|e| e.to_string())?.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        match serde_json::from_str::<RulesetData>(&content) {
+            Ok(r) => rulesets.push(r),
+            Err(_) => continue,
+        }
+    }
+    Ok(rulesets)
+}
+
+#[tauri::command]
+fn delete_ruleset(id: String) -> Result<(), String> {
+    let path = rulesets_dir()?.join(format!("{}.json", id));
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -228,7 +356,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_scene, list_scenes, delete_scene,
             save_campaign, list_campaigns, delete_campaign,
-            save_character, list_characters, delete_character
+            save_character, list_characters, delete_character,
+            save_class, list_classes, delete_class,
+            save_ruleset, list_rulesets, delete_ruleset
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
