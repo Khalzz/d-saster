@@ -34,5 +34,16 @@
       "description": "It measures **force of personality**, **persuasiveness**, and **social presence**, governing the ability to **influence**, **deceive**, or **inspire** others.\n\n*Some example actions who use this are:*\n- Persuasion & Deception\n- Intimidation\n- Performance"
     }
   ],
-  "classes": []
+  "classes": [
+    {
+      "id": "a643ef55-b047-4c94-830e-34ee29b33db2",
+      "name": "",
+      "modifiers": [
+        {
+          "name": "",
+          "value": 0
+        }
+      ]
+    }
+  ]
 }

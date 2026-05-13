@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { ChevronDown, ChevronLeft, GripVertical, Plus, Trash2, X } from "lucide-react";
@@ -135,18 +136,12 @@ export default function RulesetEditor() {
           </Section>
 
           {/* ── Character Creation ── */}
-          <Section title="Character Creation" defaultOpen>
-            <div className="flex flex-col gap-6">
+          <Section title="Stats" defaultOpen>
+            <div className="flex flex-col gap-2">
 
               {/* Stats */}
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-gold-500 text-xs font-semibold uppercase tracking-wider">Stats</span>
-                  <button className="h-7! min-w-0! px-2! text-[11px]! gap-1! flex items-center" onClick={addStat}>
-                    <Plus className="h-3 w-3" /> Add stat
-                  </button>
-                </div>
-
+                
                 {ruleset.stats.length === 0 && (
                   <p className="text-gold-700 text-xs">No stats defined yet.</p>
                 )}
@@ -166,17 +161,18 @@ export default function RulesetEditor() {
                   ))}
                 </div>
               </div>
-
-              <div className="border-t border-gold-500/20" />
-
+              <button
+                className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-dashed! border-gold-500/30! text-gold-600! hover:border-gold-500/60! hover:text-gold-400! hover:bg-transparent!"
+                onClick={addStat}
+              >
+                <Plus className="h-3 w-3" /> Add Stat
+              </button>
+            </div>
+          </Section>
+          <Section title="Classes" defaultOpen>
               {/* Classes */}
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-gold-500 text-xs font-semibold uppercase tracking-wider">Classes</span>
-                  <button className="h-7! min-w-0! px-2! text-[11px]! gap-1! flex items-center" onClick={addClass}>
-                    <Plus className="h-3 w-3" /> Add class
-                  </button>
-                </div>
+                
 
                 {ruleset.classes.length === 0 && (
                   <p className="text-gold-700 text-xs">No classes defined yet.</p>
@@ -187,6 +183,7 @@ export default function RulesetEditor() {
                     <ClassCard
                       key={cls.id}
                       cls={cls}
+                      stats={ruleset.stats}
                       onNameChange={(name) => updateClass(ci, { name })}
                       onDelete={() => removeClass(ci)}
                       onAddModifier={() => addModifier(ci)}
@@ -195,8 +192,13 @@ export default function RulesetEditor() {
                     />
                   ))}
                 </div>
+                <button
+                  className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-dashed! border-gold-500/30! text-gold-600! hover:border-gold-500/60! hover:text-gold-400! hover:bg-transparent!"
+                  onClick={addClass}
+                >
+                  <Plus className="h-3 w-3" /> Add Class
+                </button>
               </div>
-            </div>
           </Section>
           {/* Actions */}
           <div className="flex justify-end gap-2 pb-2">
@@ -237,7 +239,7 @@ function Section({ title, defaultOpen = false, children }: {
         <ChevronDown className={`h-4 w-4 text-gold-600 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="px-2 py-2 bg-base/60 border-t border-gold-500/20">
+        <div className="px-3 py-3 bg-base/60 border-t border-gold-500/20">
           {children}
         </div>
       )}
@@ -245,8 +247,9 @@ function Section({ title, defaultOpen = false, children }: {
   );
 }
 
-function ClassCard({ cls, onNameChange, onDelete, onAddModifier, onUpdateModifier, onRemoveModifier }: {
+function ClassCard({ cls, stats, onNameChange, onDelete, onAddModifier, onUpdateModifier, onRemoveModifier }: {
   cls: RulesetClass;
+  stats: StatDefinition[];
   onNameChange: (name: string) => void;
   onDelete: () => void;
   onAddModifier: () => void;
@@ -254,6 +257,8 @@ function ClassCard({ cls, onNameChange, onDelete, onAddModifier, onUpdateModifie
   onRemoveModifier: (i: number) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const statLabel = (key: string) => stats.find(s => s.key === key)?.label ?? key;
+
   return (
     <div className="border border-gold-500/20 rounded-lg overflow-hidden">
       {/* Class header */}
@@ -273,7 +278,7 @@ function ClassCard({ cls, onNameChange, onDelete, onAddModifier, onUpdateModifie
         </div>
         {cls.modifiers.length > 0 && !open && (
           <span className="text-gold-700 text-[10px] shrink-0">
-            {cls.modifiers.filter(m => m.name).map(m => `${m.name} ${m.value >= 0 ? "+" : ""}${m.value}`).join(" · ")}
+            {cls.modifiers.filter(m => m.name).map(m => `${statLabel(m.name)} ${m.value >= 0 ? "+" : ""}${m.value}`).join(" · ")}
           </span>
         )}
         <button
@@ -287,17 +292,21 @@ function ClassCard({ cls, onNameChange, onDelete, onAddModifier, onUpdateModifie
       {/* Modifiers */}
       {open && (
         <div className="px-3 py-3 bg-base/60 border-t border-gold-500/20 flex flex-col gap-2">
-          {cls.modifiers.length === 0 && (
+          {stats.length === 0 && (
+            <p className="text-gold-700 text-xs">Define stats first to add modifiers.</p>
+          )}
+          {stats.length > 0 && cls.modifiers.length === 0 && (
             <p className="text-gold-700 text-xs">No modifiers yet.</p>
           )}
-          {cls.modifiers.map((mod, i) => (
+          {stats.length > 0 && cls.modifiers.map((mod, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input
-                className="field-input flex-1 min-w-0 text-xs"
-                placeholder="Stat name (e.g. STR)"
-                value={mod.name}
-                onChange={(e) => onUpdateModifier(i, { name: e.target.value })}
-              />
+              <div className="relative flex-1 min-w-0">
+                <ModifierStatSelect
+                  stats={stats}
+                  value={mod.name}
+                  onChange={(v) => onUpdateModifier(i, { name: v })}
+                />
+              </div>
               <input
                 type="number"
                 className="field-input text-center text-xs shrink-0"
@@ -313,12 +322,14 @@ function ClassCard({ cls, onNameChange, onDelete, onAddModifier, onUpdateModifie
               </button>
             </div>
           ))}
-          <button
-            className="self-start h-7! min-w-0! px-2! text-[11px]! gap-1! flex items-center"
-            onClick={onAddModifier}
-          >
-            <Plus className="h-3 w-3" /> Add modifier
-          </button>
+          {stats.length > 0 && (
+            <button
+              className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-dashed! border-gold-500/30! text-gold-600! hover:border-gold-500/60! hover:text-gold-400! hover:bg-transparent!"
+              onClick={onAddModifier}
+            >
+              <Plus className="h-3 w-3" /> Add modifier
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -349,18 +360,26 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
         <GripVertical className="h-4 w-4" />
       </div>
 
-      <div className={`flex-1 border border-gold-500/20 rounded-lg px-3 py-2.5 flex flex-col gap-0.5 bg-surface/40 transition-opacity ${isDragging ? "opacity-40" : ""}`}>
-        <input
-          className="bg-transparent outline-none border-0 text-gold-300 text-sm font-medium leading-snug w-full p-0 m-0 placeholder:text-gold-700/50"
-          value={stat.label}
-          onChange={(e) => {
-            const label = e.target.value;
-            onUpdate({ label, key: label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") });
-          }}
-          placeholder="Write the stat name here…"
-        />
+      <div className={`flex-1 border border-gold-500/20 rounded-lg flex flex-col gap-0.5 bg-surface/40 transition-opacity overflow-hidden ${isDragging ? "opacity-40" : ""}`}>
+        <div className="w-full border-b border-gold-500/20 px-3 py-2 flex items-center gap-2">
+          <input
+            className="bg-transparent outline-none border-0 text-gold-300 text-sm font-medium leading-snug w-full p-0 m-0 placeholder:text-gold-700/50"
+            value={stat.label}
+            onChange={(e) => {
+              const label = e.target.value;
+              onUpdate({ label, key: label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "") });
+            }}
+            placeholder="Write the stat name here…"
+          />
+          <button
+            className="w-6! h-6! min-w-0! p-0! shrink-0 bg-transparent! text-[#ef4444]! border-[#ef4444]/30! hover:bg-[#ef4444]/10!"
+            onClick={onRemove}
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
         <textarea
-          className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed p-0 m-0 overflow-hidden placeholder:text-gold-700/40"
+          className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed px-3 py-2  m-0 overflow-hidden placeholder:text-gold-700/40"
           style={{ fieldSizing: "content" } as React.CSSProperties}
           value={stat.description}
           onChange={(e) => onUpdate({ description: e.target.value })}
@@ -368,14 +387,74 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
           rows={1}
         />
       </div>
-
-      <button
-        className="w-6! h-6! min-w-0! p-0! shrink-0 bg-transparent! text-[#ef4444]! border-[#ef4444]/30! hover:bg-[#ef4444]/10!"
-        onClick={onRemove}
-      >
-        <Trash2 className="h-3 w-3" />
-      </button>
     </div>
   );
 }
 
+function ModifierStatSelect({ stats, value, onChange }: {
+  stats: StatDefinition[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const selected = stats.find(s => s.key === value);
+  const open = pos !== null;
+
+  const openMenu = () => {
+    if (triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - r.bottom;
+      if (spaceBelow < 160 && r.top > spaceBelow) {
+        setPos({ bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width });
+      } else {
+        setPos({ top: r.bottom + 4, left: r.left, width: r.width });
+      }
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <button
+        ref={triggerRef}
+        className="w-full! px-3! flex items-center justify-between gap-2 bg-surface! border-gold-500/30! rounded-lg! text-xs! hover:border-gold-500/60!"
+        onClick={() => open ? setPos(null) : openMenu()}
+      >
+        <span className={selected ? "text-gold-200" : "text-gold-600"}>
+          {selected?.label ?? "Select stat…"}
+        </span>
+        <ChevronDown className={`h-3 w-3 text-gold-600 transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && pos && createPortal(
+        <>
+          <div className="fixed inset-0 z-998" onClick={() => setPos(null)} />
+          <div
+            style={{ position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left, width: pos.width, zIndex: 999 }}
+            className="bg-surface border border-gold-500/40 rounded-lg overflow-hidden shadow-xl max-h-36 flex flex-col"
+          >
+            <div className="overflow-y-auto">
+              <div
+                className={`px-3 py-2 cursor-pointer hover:bg-gold-500/10 transition-colors text-xs ${!value ? "text-gold-400 bg-gold-500/10" : "text-gold-600"}`}
+                onClick={() => { onChange(""); setPos(null); }}
+              >
+                Select stat…
+              </div>
+              <div className="border-t border-gold-500/20" />
+              {stats.map(s => (
+                <div
+                  key={s.key}
+                  className={`px-3 py-2 cursor-pointer hover:bg-gold-500/10 transition-colors text-xs text-gold-300 ${value === s.key ? "bg-gold-500/15" : ""}`}
+                  onClick={() => { onChange(s.key); setPos(null); }}
+                >
+                  {s.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}

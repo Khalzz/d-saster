@@ -54,7 +54,8 @@ export default function CharacterEditor() {
   const navigate = useNavigate();
   const state = location.state as { existing?: Character } | null;
   const imgInputRef = useRef<HTMLInputElement>(null);
-  const classDropdownRef = useRef<HTMLDivElement>(null);
+  const classTriggerRef = useRef<HTMLDivElement>(null);
+  const [classDropdownPos, setClassDropdownPos] = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null);
   const rulesetDropdownRef = useRef<HTMLDivElement>(null);
 
   const [char, setChar] = useState<Character>(() =>
@@ -90,12 +91,6 @@ export default function CharacterEditor() {
     return () => document.removeEventListener("mousedown", h);
   }, [showRulesetDropdown]);
 
-  useEffect(() => {
-    if (!showClassDropdown) return;
-    const h = (e: MouseEvent) => { if (!classDropdownRef.current?.contains(e.target as Node)) setShowClassDropdown(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [showClassDropdown]);
 
   const selectedRuleset = rulesets.find(r => r.id === char.rulesetId);
   const activeStatDefs = selectedRuleset?.stats.length ? selectedRuleset.stats : DEFAULT_STAT_DEFS;
@@ -171,14 +166,11 @@ export default function CharacterEditor() {
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 max-w-4xl mx-auto w-full">
 
-        {/* Ruleset selector — full width floating */}
+        {/* Ruleset selector */}
         <div className="relative" ref={rulesetDropdownRef}>
           <button
-            className="w-full px-3 flex items-center justify-between gap-3 bg-surface border border-gold-500/30 rounded-xl cursor-pointer hover:border-gold-500/60 transition-colors select-none shadow-sm "
+            className="w-full px-3 flex items-center justify-between gap-3 bg-surface border border-gold-500/30 rounded-xl cursor-pointer hover:border-gold-500/60 transition-colors select-none shadow-sm"
             onClick={() => setShowRulesetDropdown(v => !v)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setShowRulesetDropdown(v => !v); }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-gold-600 text-[10px] font-semibold uppercase tracking-wider shrink-0">Ruleset</span>
@@ -337,22 +329,39 @@ export default function CharacterEditor() {
 
             {/* Class selector */}
             <Field label="Class">
-              <div className="relative" ref={classDropdownRef}>
-                <div
-                  className="field-input flex items-center justify-between cursor-pointer select-none"
-                  onClick={() => setShowClassDropdown(v => !v)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setShowClassDropdown(v => !v); }}
-                >
-                  <span className={`text-sm ${selectedClass ? "text-gold-200" : "text-gold-600"}`}>
-                    {selectedClass?.name ?? "Select class…"}
-                  </span>
-                  <ChevronDown className={`h-3.5 w-3.5 text-gold-600 transition-transform shrink-0 ${showClassDropdown ? "rotate-180" : ""}`} />
-                </div>
+              <div
+                ref={classTriggerRef}
+                className="field-input flex items-center justify-between cursor-pointer select-none"
+                onClick={() => {
+                  if (classTriggerRef.current) {
+                    const r = classTriggerRef.current.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - r.bottom;
+                    if (spaceBelow < 160 && r.top > spaceBelow) {
+                      setClassDropdownPos({ bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width });
+                    } else {
+                      setClassDropdownPos({ top: r.bottom + 4, left: r.left, width: r.width });
+                    }
+                  }
+                  setShowClassDropdown(v => !v);
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") e.currentTarget.click(); }}
+              >
+                <span className={`text-sm ${selectedClass ? "text-gold-200" : "text-gold-600"}`}>
+                  {selectedClass?.name ?? "Select class…"}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 text-gold-600 transition-transform shrink-0 ${showClassDropdown ? "rotate-180" : ""}`} />
+              </div>
 
-                {showClassDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-20 bg-surface border border-gold-500/40 rounded-lg overflow-hidden shadow-xl">
+              {showClassDropdown && classDropdownPos && createPortal(
+                <>
+                  <div className="fixed inset-0 z-998" onClick={() => setShowClassDropdown(false)} />
+                  <div
+                    style={{ position: "fixed", top: classDropdownPos.top, bottom: classDropdownPos.bottom, left: classDropdownPos.left, width: classDropdownPos.width, zIndex: 999 }}
+                    className="bg-surface border border-gold-500/40 rounded-lg overflow-hidden shadow-xl max-h-36 flex flex-col"
+                  >
+                    <div className="overflow-y-auto flex-1">
                     {activeClasses.length === 0 && (
                       <p className="text-gold-700 text-xs px-3 py-2.5">
                         {selectedRuleset ? "No classes defined in this ruleset" : "No classes yet"}
@@ -382,8 +391,9 @@ export default function CharacterEditor() {
                         )}
                       </div>
                     ))}
+                    </div>
                     {!selectedRuleset && (
-                      <div className="border-t border-gold-500/20">
+                      <div className="border-t border-gold-500/20 shrink-0">
                         <button
                           className="w-full! h-8! text-xs! border-0! rounded-none! flex items-center justify-center gap-1.5 text-gold-500! hover:bg-gold-500/10! bg-transparent!"
                           onClick={() => { setShowClassDropdown(false); setShowCreateClass(true); }}
@@ -393,7 +403,7 @@ export default function CharacterEditor() {
                       </div>
                     )}
                     {selectedRuleset && (
-                      <div className="border-t border-gold-500/20">
+                      <div className="border-t border-gold-500/20 shrink-0">
                         <button
                           className="w-full! h-8! text-xs! border-0! rounded-none! flex items-center justify-center gap-1.5 text-gold-600! hover:bg-gold-500/10! bg-transparent!"
                           onClick={() => { setShowClassDropdown(false); navigate("/ruleset-editor", { state: { existing: selectedRuleset } }); }}
@@ -403,8 +413,9 @@ export default function CharacterEditor() {
                       </div>
                     )}
                   </div>
-                )}
-              </div>
+                </>,
+                document.body
+              )}
             </Field>
 
             <Field label="Description">
