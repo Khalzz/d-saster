@@ -1,0 +1,48 @@
+{
+  "id": "86dcfd5f-f9a1-4421-9ed1-168aaefa44d7",
+  "title": "campaña de ejemplo",
+  "description": "Esta es una campaña",
+  "tags": [],
+  "color": "#2d1a1a",
+  "image": null,
+  "scenes": [
+    "d0fcfaeb-5340-4e0e-81b5-921db1c5918f",
+    "3c3b863d-fc6e-4e93-a51d-4d68af4491bb",
+    "cd55450e-99ae-41b1-a7aa-012d56225498"
+  ],
+  "sceneMap": [
+    {
+      "id": "d0fcfaeb-5340-4e0e-81b5-921db1c5918f",
+      "x": 59.16666666666664,
+      "y": 51.66666666666663,
+      "connections": {
+        "top": null,
+        "right": null,
+        "bottom": null,
+        "left": null
+      }
+    },
+    {
+      "id": "3c3b863d-fc6e-4e93-a51d-4d68af4491bb",
+      "x": 60.07575757575749,
+      "y": 186.36363636363637,
+      "connections": {
+        "top": null,
+        "right": null,
+        "bottom": null,
+        "left": null
+      }
+    },
+    {
+      "id": "cd55450e-99ae-41b1-a7aa-012d56225498",
+      "x": 58.3333333333333,
+      "y": -90.41666666666669,
+      "connections": {
+        "top": null,
+        "right": null,
+        "bottom": null,
+        "left": null
+      }
+    }
+  ]
+}

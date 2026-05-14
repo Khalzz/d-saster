@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
@@ -20,6 +20,7 @@ export interface RulesetClassModifier {
 export interface RulesetClass {
   id: string;
   name: string;
+  description: string;
   modifiers: RulesetClassModifier[];
 }
 
@@ -77,7 +78,7 @@ export default function RulesetEditor() {
 
   // ── Class helpers ──────────────────────────────────────────────────
   const addClass = () =>
-    setRuleset(r => ({ ...r, classes: [...r.classes, { id: crypto.randomUUID(), name: "", modifiers: [] }] }));
+    setRuleset(r => ({ ...r, classes: [...r.classes, { id: crypto.randomUUID(), name: "", description: "", modifiers: [] }] }));
 
   const updateClass = (i: number, patch: Partial<RulesetClass>) =>
     setRuleset(r => ({ ...r, classes: r.classes.map((c, j) => j === i ? { ...c, ...patch } : c) }));
@@ -185,6 +186,7 @@ export default function RulesetEditor() {
                       cls={cls}
                       stats={ruleset.stats}
                       onNameChange={(name) => updateClass(ci, { name })}
+                      onDescriptionChange={(description) => updateClass(ci, { description })}
                       onDelete={() => removeClass(ci)}
                       onAddModifier={() => addModifier(ci)}
                       onUpdateModifier={(mi, patch) => updateModifier(ci, mi, patch)}
@@ -247,17 +249,26 @@ function Section({ title, defaultOpen = false, children }: {
   );
 }
 
-function ClassCard({ cls, stats, onNameChange, onDelete, onAddModifier, onUpdateModifier, onRemoveModifier }: {
+function ClassCard({ cls, stats, onNameChange, onDescriptionChange, onDelete, onAddModifier, onUpdateModifier, onRemoveModifier }: {
   cls: RulesetClass;
   stats: StatDefinition[];
   onNameChange: (name: string) => void;
+  onDescriptionChange: (description: string) => void;
   onDelete: () => void;
   onAddModifier: () => void;
   onUpdateModifier: (i: number, patch: Partial<RulesetClassModifier>) => void;
   onRemoveModifier: (i: number) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const descRef = useRef<HTMLTextAreaElement>(null);
   const statLabel = (key: string) => stats.find(s => s.key === key)?.label ?? key;
+
+  useEffect(() => {
+    if (descRef.current) {
+      descRef.current.style.height = "auto";
+      descRef.current.style.height = descRef.current.scrollHeight + "px";
+    }
+  }, [cls.description]);
 
   return (
     <div className="border border-gold-500/20 rounded-lg overflow-hidden">
@@ -292,6 +303,14 @@ function ClassCard({ cls, stats, onNameChange, onDelete, onAddModifier, onUpdate
       {/* Modifiers */}
       {open && (
         <div className="px-3 py-3 bg-base/60 border-t border-gold-500/20 flex flex-col gap-2">
+          <textarea
+            ref={descRef}
+            className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed p-0 m-0 placeholder:text-gold-700/40"
+            value={cls.description}
+            onChange={(e) => onDescriptionChange(e.target.value)}
+            placeholder="Describe this class…"
+            rows={2}
+          />
           {stats.length === 0 && (
             <p className="text-gold-700 text-xs">Define stats first to add modifiers.</p>
           )}
@@ -345,6 +364,15 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
 }) {
+  const descRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (descRef.current) {
+      descRef.current.style.height = "auto";
+      descRef.current.style.height = descRef.current.scrollHeight + "px";
+    }
+  }, [stat.description]);
+
   return (
     <div
       className="flex items-center gap-2"
@@ -379,12 +407,12 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
           </button>
         </div>
         <textarea
-          className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed px-3 py-2  m-0 overflow-hidden placeholder:text-gold-700/40"
-          style={{ fieldSizing: "content" } as React.CSSProperties}
+          ref={descRef}
+          className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed px-3 py-2 m-0 placeholder:text-gold-700/40 h-fit max-h-[300px]"
           value={stat.description}
           onChange={(e) => onUpdate({ description: e.target.value })}
           placeholder="Write the stat description here…"
-          rows={1}
+          rows={2}
         />
       </div>
     </div>
