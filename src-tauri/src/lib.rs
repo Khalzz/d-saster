@@ -273,11 +273,14 @@ fn delete_character(id: String) -> Result<(), String> {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct StatDefinition {
     key: String,
     label: String,
     #[serde(default)]
     description: String,
+    #[serde(default)]
+    modifier_formula: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -290,14 +293,19 @@ struct RulesetClassModifier {
 struct RulesetClass {
     id: String,
     name: String,
+    #[serde(default)]
+    description: String,
     modifiers: Vec<RulesetClassModifier>,
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RulesetData {
     id: String,
     name: String,
     description: String,
+    #[serde(default)]
+    modifier_formula: String,
     stats: Vec<StatDefinition>,
     classes: Vec<RulesetClass>,
 }

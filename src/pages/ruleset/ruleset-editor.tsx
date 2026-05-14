@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
-import { ChevronDown, ChevronLeft, GripVertical, Plus, Trash2, X } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, ChevronLeft, GripVertical, Info, Plus, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import Field from "../../components/ui/Field";
 
@@ -10,6 +10,7 @@ export interface StatDefinition {
   key: string;
   label: string;
   description: string;
+  modifierFormula?: string;
 }
 
 export interface RulesetClassModifier {
@@ -28,6 +29,7 @@ export interface Ruleset {
   id: string;
   name: string;
   description: string;
+  modifierFormula: string;
   stats: StatDefinition[];
   classes: RulesetClass[];
 }
@@ -38,13 +40,9 @@ export default function RulesetEditor() {
   const state = location.state as { existing?: Ruleset } | null;
 
   const [ruleset, setRuleset] = useState<Ruleset>(() =>
-    state?.existing ?? {
-      id: crypto.randomUUID(),
-      name: "",
-      description: "",
-      stats: [],
-      classes: [],
-    }
+    state?.existing
+      ? { ...state.existing, modifierFormula: state.existing.modifierFormula || "({{stat_points}} - 10) / 2" }
+      : { id: crypto.randomUUID(), name: "", description: "", modifierFormula: "({{stat_points}} - 10) / 2", stats: [], classes: [] }
   );
 
   const handleSave = async () => {
@@ -58,7 +56,7 @@ export default function RulesetEditor() {
 
   // ── Stats helpers ──────────────────────────────────────────────────
   const addStat = () =>
-    setRuleset(r => ({ ...r, stats: [...r.stats, { key: "", label: "", description: "" }] }));
+    setRuleset(r => ({ ...r, stats: [...r.stats, { key: "", label: "", description: "", modifierFormula: "" }] }));
 
   const updateStat = (i: number, patch: Partial<StatDefinition>) =>
     setRuleset(r => ({ ...r, stats: r.stats.map((s, j) => j === i ? { ...s, ...patch } : s) }));
@@ -86,16 +84,6 @@ export default function RulesetEditor() {
   const removeClass = (i: number) =>
     setRuleset(r => ({ ...r, classes: r.classes.filter((_, j) => j !== i) }));
 
-  const addModifier = (ci: number) =>
-    updateClass(ci, { modifiers: [...ruleset.classes[ci].modifiers, { name: "", value: 0 }] });
-
-  const updateModifier = (ci: number, mi: number, patch: Partial<RulesetClassModifier>) =>
-    updateClass(ci, {
-      modifiers: ruleset.classes[ci].modifiers.map((m, j) => j === mi ? { ...m, ...patch } : m),
-    });
-
-  const removeModifier = (ci: number, mi: number) =>
-    updateClass(ci, { modifiers: ruleset.classes[ci].modifiers.filter((_, j) => j !== mi) });
 
   return (
     <main className="h-full min-h-screen bg-base flex flex-col">
@@ -136,13 +124,19 @@ export default function RulesetEditor() {
             </div>
           </Section>
 
-          {/* ── Character Creation ── */}
+          {/* ── Stats ── */}
           <Section title="Stats" defaultOpen>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
 
-              {/* Stats */}
+              {/* Global modifier formula */}
+              <FormulaInput
+                value={ruleset.modifierFormula}
+                onChange={(v) => setRuleset(r => ({ ...r, modifierFormula: v }))}
+              />
+
               <div className="flex flex-col gap-2">
-                
+                <span className="text-gold-400 text-sm font-semibold">Stat list</span>
+
                 {ruleset.stats.length === 0 && (
                   <p className="text-gold-700 text-xs">No stats defined yet.</p>
                 )}
@@ -161,13 +155,13 @@ export default function RulesetEditor() {
                     />
                   ))}
                 </div>
+                <button
+                  className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-dashed! border-gold-500/30! text-gold-600! hover:border-gold-500/60! hover:text-gold-400! hover:bg-transparent!"
+                  onClick={addStat}
+                >
+                  <Plus className="h-3 w-3" /> Add Stat
+                </button>
               </div>
-              <button
-                className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-dashed! border-gold-500/30! text-gold-600! hover:border-gold-500/60! hover:text-gold-400! hover:bg-transparent!"
-                onClick={addStat}
-              >
-                <Plus className="h-3 w-3" /> Add Stat
-              </button>
             </div>
           </Section>
           <Section title="Classes" defaultOpen>
@@ -184,13 +178,9 @@ export default function RulesetEditor() {
                     <ClassCard
                       key={cls.id}
                       cls={cls}
-                      stats={ruleset.stats}
                       onNameChange={(name) => updateClass(ci, { name })}
                       onDescriptionChange={(description) => updateClass(ci, { description })}
                       onDelete={() => removeClass(ci)}
-                      onAddModifier={() => addModifier(ci)}
-                      onUpdateModifier={(mi, patch) => updateModifier(ci, mi, patch)}
-                      onRemoveModifier={(mi) => removeModifier(ci, mi)}
                     />
                   ))}
                 </div>
@@ -249,35 +239,18 @@ function Section({ title, defaultOpen = false, children }: {
   );
 }
 
-function ClassCard({ cls, stats, onNameChange, onDescriptionChange, onDelete, onAddModifier, onUpdateModifier, onRemoveModifier }: {
+function ClassCard({ cls, onNameChange, onDescriptionChange, onDelete }: {
   cls: RulesetClass;
-  stats: StatDefinition[];
   onNameChange: (name: string) => void;
   onDescriptionChange: (description: string) => void;
   onDelete: () => void;
-  onAddModifier: () => void;
-  onUpdateModifier: (i: number, patch: Partial<RulesetClassModifier>) => void;
-  onRemoveModifier: (i: number) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const descRef = useRef<HTMLTextAreaElement>(null);
-  const statLabel = (key: string) => stats.find(s => s.key === key)?.label ?? key;
-
-  useEffect(() => {
-    if (descRef.current) {
-      descRef.current.style.height = "auto";
-      descRef.current.style.height = descRef.current.scrollHeight + "px";
-    }
-  }, [cls.description]);
+  const [open, setOpen] = useState(true);
 
   return (
     <div className="border border-gold-500/20 rounded-lg overflow-hidden">
-      {/* Class header */}
       <div className="flex items-center gap-2 px-3 py-2 bg-surface">
-        <div
-          className="flex-1 flex items-center gap-2 cursor-pointer"
-          onClick={() => setOpen(v => !v)}
-        >
+        <div className="flex-1 flex items-center gap-2 cursor-pointer" onClick={() => setOpen(v => !v)}>
           <ChevronDown className={`h-3.5 w-3.5 text-gold-600 transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
           <input
             className="bg-transparent border-none outline-none text-gold-300 text-sm font-medium flex-1 cursor-text"
@@ -287,11 +260,6 @@ function ClassCard({ cls, stats, onNameChange, onDescriptionChange, onDelete, on
             placeholder="Class name…"
           />
         </div>
-        {cls.modifiers.length > 0 && !open && (
-          <span className="text-gold-700 text-[10px] shrink-0">
-            {cls.modifiers.filter(m => m.name).map(m => `${statLabel(m.name)} ${m.value >= 0 ? "+" : ""}${m.value}`).join(" · ")}
-          </span>
-        )}
         <button
           className="w-6! h-6! min-w-0! p-0! shrink-0 text-[#ef4444]! border-[#ef4444]/30! hover:bg-[#ef4444]/10!"
           onClick={onDelete}
@@ -300,58 +268,71 @@ function ClassCard({ cls, stats, onNameChange, onDescriptionChange, onDelete, on
         </button>
       </div>
 
-      {/* Modifiers */}
       {open && (
-        <div className="px-3 py-3 bg-base/60 border-t border-gold-500/20 flex flex-col gap-2">
+        <div className="px-3 py-3 bg-base/60 border-t border-gold-500/20">
           <textarea
-            ref={descRef}
-            className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed p-0 m-0 placeholder:text-gold-700/40"
+            className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed p-0 m-0 placeholder:text-gold-700/40 overflow-y-auto max-h-75"
+            style={{ fieldSizing: "content" } as React.CSSProperties}
             value={cls.description}
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="Describe this class…"
-            rows={2}
+            rows={1}
           />
-          {stats.length === 0 && (
-            <p className="text-gold-700 text-xs">Define stats first to add modifiers.</p>
-          )}
-          {stats.length > 0 && cls.modifiers.length === 0 && (
-            <p className="text-gold-700 text-xs">No modifiers yet.</p>
-          )}
-          {stats.length > 0 && cls.modifiers.map((mod, i) => (
-            <div key={i} className="flex gap-2 items-center">
-              <div className="relative flex-1 min-w-0">
-                <ModifierStatSelect
-                  stats={stats}
-                  value={mod.name}
-                  onChange={(v) => onUpdateModifier(i, { name: v })}
-                />
-              </div>
-              <input
-                type="number"
-                className="field-input text-center text-xs shrink-0"
-                style={{ width: "4rem" }}
-                value={mod.value}
-                onChange={(e) => onUpdateModifier(i, { value: parseInt(e.target.value) || 0 })}
-              />
-              <button
-                className="w-6! h-6! min-w-0! p-0! shrink-0 text-[#ef4444]! border-[#ef4444]/30! hover:bg-[#ef4444]/10!"
-                onClick={() => onRemoveModifier(i)}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-          {stats.length > 0 && (
-            <button
-              className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-dashed! border-gold-500/30! text-gold-600! hover:border-gold-500/60! hover:text-gold-400! hover:bg-transparent!"
-              onClick={onAddModifier}
-            >
-              <Plus className="h-3 w-3" /> Add modifier
-            </button>
-          )}
         </div>
       )}
     </div>
+  );
+}
+
+function FormulaInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const infoRef = useRef<HTMLButtonElement>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const valid = value.includes("{{stat_points}}");
+  const warn = value.length > 0 && !valid;
+
+  return (
+    <>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-gold-400 text-sm font-semibold">Modifier formula</span>
+          <button
+            ref={infoRef}
+            className="w-4! h-4! min-w-0! p-0! bg-transparent! border-0! text-gold-700! hover:text-gold-500! shrink-0"
+            onMouseEnter={() => {
+              const r = infoRef.current?.getBoundingClientRect();
+              if (r) setTooltipPos({ top: r.bottom + 6, left: r.left });
+            }}
+            onMouseLeave={() => setTooltipPos(null)}
+          >
+            <Info className="h-3 w-3" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            className="field-input font-mono text-xs flex-1"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="({{stat_points}} - 10) / 2"
+          />
+          {valid && <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
+          {warn && <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+        </div>
+      </div>
+
+      {tooltipPos && createPortal(
+        <div
+          style={{ position: "fixed", top: tooltipPos.top, left: tooltipPos.left, zIndex: 999 }}
+          className="bg-surface border border-gold-500/30 rounded-lg px-3 py-2 shadow-xl max-w-56 pointer-events-none"
+        >
+          <p className="text-gold-400 text-[11px] font-medium mb-1">Handlebars formula</p>
+          <p className="text-gold-600 text-[10px] leading-relaxed">
+            Use <code className="text-gold-300 font-mono bg-gold-500/10 px-0.5 rounded">{"{{stat_points}}"}</code> to reference the stat's base value.
+          </p>
+          <p className="text-gold-700 text-[10px] mt-1">Example: <span className="font-mono text-gold-500">({"{{stat_points}}"} - 10) / 2</span></p>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -372,6 +353,7 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
       descRef.current.style.height = descRef.current.scrollHeight + "px";
     }
   }, [stat.description]);
+
 
   return (
     <div
@@ -408,7 +390,7 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
         </div>
         <textarea
           ref={descRef}
-          className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed px-3 py-2 m-0 placeholder:text-gold-700/40 h-fit max-h-[300px]"
+          className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed px-3 py-2 m-0 placeholder:text-gold-700/40 h-fit max-h-75"
           value={stat.description}
           onChange={(e) => onUpdate({ description: e.target.value })}
           placeholder="Write the stat description here…"
@@ -419,70 +401,3 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
   );
 }
 
-function ModifierStatSelect({ stats, value, onChange }: {
-  stats: StatDefinition[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const selected = stats.find(s => s.key === value);
-  const open = pos !== null;
-
-  const openMenu = () => {
-    if (triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - r.bottom;
-      if (spaceBelow < 160 && r.top > spaceBelow) {
-        setPos({ bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width });
-      } else {
-        setPos({ top: r.bottom + 4, left: r.left, width: r.width });
-      }
-    }
-  };
-
-  return (
-    <div className="w-full">
-      <button
-        ref={triggerRef}
-        className="w-full! px-3! flex items-center justify-between gap-2 bg-surface! border-gold-500/30! rounded-lg! text-xs! hover:border-gold-500/60!"
-        onClick={() => open ? setPos(null) : openMenu()}
-      >
-        <span className={selected ? "text-gold-200" : "text-gold-600"}>
-          {selected?.label ?? "Select stat…"}
-        </span>
-        <ChevronDown className={`h-3 w-3 text-gold-600 transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open && pos && createPortal(
-        <>
-          <div className="fixed inset-0 z-998" onClick={() => setPos(null)} />
-          <div
-            style={{ position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left, width: pos.width, zIndex: 999 }}
-            className="bg-surface border border-gold-500/40 rounded-lg overflow-hidden shadow-xl max-h-36 flex flex-col"
-          >
-            <div className="overflow-y-auto">
-              <div
-                className={`px-3 py-2 cursor-pointer hover:bg-gold-500/10 transition-colors text-xs ${!value ? "text-gold-400 bg-gold-500/10" : "text-gold-600"}`}
-                onClick={() => { onChange(""); setPos(null); }}
-              >
-                Select stat…
-              </div>
-              <div className="border-t border-gold-500/20" />
-              {stats.map(s => (
-                <div
-                  key={s.key}
-                  className={`px-3 py-2 cursor-pointer hover:bg-gold-500/10 transition-colors text-xs text-gold-300 ${value === s.key ? "bg-gold-500/15" : ""}`}
-                  onClick={() => { onChange(s.key); setPos(null); }}
-                >
-                  {s.label}
-                </div>
-              ))}
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
-    </div>
-  );
-}

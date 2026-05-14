@@ -44,7 +44,17 @@ const DEFAULT_STAT_DEFS: StatDefinition[] = [
 
 const DEFAULT_STATS: Record<string, number> = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
 
-function statModifier(val: number) {
+function calcModifier(val: number, formula?: string): string {
+  if (formula?.includes("{{stat_points}}")) {
+    try {
+      const expr = formula.replace(/\{\{stat_points\}\}/g, String(val));
+      // eslint-disable-next-line no-new-func
+      const result = Math.floor(new Function(`return (${expr})`)() as number);
+      return result >= 0 ? `+${result}` : `${result}`;
+    } catch {
+      return "?";
+    }
+  }
   const mod = Math.floor((val - 10) / 2);
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
@@ -286,6 +296,7 @@ export default function CharacterEditor() {
                     key={def.key}
                     def={def}
                     val={char.stats[def.key] ?? 10}
+                    formula={selectedRuleset?.modifierFormula}
                     onChange={(raw) => setStat(def.key, raw)}
                   />
                 ))}
@@ -526,9 +537,12 @@ export default function CharacterEditor() {
   );
 }
 
-function StatCell({ def, val, onChange }: { def: StatDefinition; val: number; onChange: (raw: string) => void }) {
+function StatCell({ def, val, formula, onChange }: { def: StatDefinition; val: number; formula?: string; onChange: (raw: string) => void }) {
   const cellRef = useRef<HTMLDivElement>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [inputVal, setInputVal] = useState(String(val));
+
+  useEffect(() => { setInputVal(String(val)); }, [val]);
 
   const showTooltip = () => {
     if (cellRef.current) {
@@ -548,14 +562,16 @@ function StatCell({ def, val, onChange }: { def: StatDefinition; val: number; on
         {def.label.slice(0, 3).toUpperCase()}
       </span>
       <span className="text-xl font-light leading-tight text-gold-300">
-        {statModifier(val)}
+        {calcModifier(val, formula)}
       </span>
       <input
         type="number"
         min={1}
         max={30}
-        value={val}
-        onChange={(e) => onChange(e.target.value)}
+        value={inputVal}
+        onChange={(e) => setInputVal(e.target.value)}
+        onBlur={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { onChange(e.currentTarget.value); e.currentTarget.blur(); } }}
         className="w-full text-center bg-transparent outline-none text-gold-600 text-[11px] font-medium rounded px-0.5 transition-colors hover:bg-gold-500/10 cursor-pointer select-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
       {tooltipPos && createPortal(
