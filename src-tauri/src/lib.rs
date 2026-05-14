@@ -273,14 +273,11 @@ fn delete_character(id: String) -> Result<(), String> {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct StatDefinition {
     key: String,
     label: String,
     #[serde(default)]
     description: String,
-    #[serde(default)]
-    modifier_formula: String,
 }
 
 #[derive(Serialize, Deserialize)]

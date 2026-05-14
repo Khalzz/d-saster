@@ -17,6 +17,7 @@ export interface ClassModifier {
 export interface CharacterClass {
   id: string;
   name: string;
+  description?: string;
   modifiers: ClassModifier[];
 }
 
@@ -342,7 +343,7 @@ export default function CharacterEditor() {
             <Field label="Class">
               <div
                 ref={classTriggerRef}
-                className="field-input flex items-center justify-between cursor-pointer select-none"
+                className="field-input flex items-start justify-between gap-2 cursor-pointer select-none"
                 onClick={() => {
                   if (classTriggerRef.current) {
                     const r = classTriggerRef.current.getBoundingClientRect();
@@ -359,9 +360,16 @@ export default function CharacterEditor() {
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") e.currentTarget.click(); }}
               >
-                <span className={`text-sm ${selectedClass ? "text-gold-200" : "text-gold-600"}`}>
-                  {selectedClass?.name ?? "Select class…"}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm ${selectedClass ? "text-gold-200" : "text-gold-600"}`}>
+                    {selectedClass?.name ?? "Select class…"}
+                  </p>
+                  {selectedClass?.description && (
+                    <div className="text-[11px] text-gold-600 mt-0.5 [&>p]:leading-snug [&>p]:mb-1.5 [&>p:last-child]:mb-0 [&_li]:leading-snug [&_li_p]:my-0 [&_strong]:text-gold-400 [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ul]:pl-3 [&_h1]:text-gold-300 [&_h1]:font-bold [&_h2]:text-gold-400 [&_h2]:font-semibold">
+                      <ReactMarkdown remarkPlugins={[remarkBreaks]}>{selectedClass.description}</ReactMarkdown>
+                    </div>
+                  )}
+                </div>
                 <ChevronDown className={`h-3.5 w-3.5 text-gold-600 transition-transform shrink-0 ${showClassDropdown ? "rotate-180" : ""}`} />
               </div>
 
@@ -386,8 +394,13 @@ export default function CharacterEditor() {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-gold-300 text-xs font-medium truncate">{cls.name}</p>
+                          {cls.description && (
+                            <div className="text-[10px] text-gold-600 [&>p]:leading-snug [&>p]:mb-1 [&>p:last-child]:mb-0 [&_li]:leading-snug [&_li_p]:my-0 [&_strong]:text-gold-400 [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ul]:pl-3 [&_h1]:text-gold-300 [&_h1]:font-bold [&_h2]:text-gold-400 [&_h2]:font-semibold">
+                              <ReactMarkdown remarkPlugins={[remarkBreaks]}>{cls.description}</ReactMarkdown>
+                            </div>
+                          )}
                           {cls.modifiers.length > 0 && (
-                            <p className="text-gold-600 text-[10px] truncate">
+                            <p className="text-gold-700 text-[10px] truncate">
                               {cls.modifiers.map(m => `${m.name} ${m.value >= 0 ? "+" : ""}${m.value}`).join("  ·  ")}
                             </p>
                           )}

@@ -10,7 +10,6 @@ export interface StatDefinition {
   key: string;
   label: string;
   description: string;
-  modifierFormula?: string;
 }
 
 export interface RulesetClassModifier {
@@ -56,7 +55,7 @@ export default function RulesetEditor() {
 
   // ── Stats helpers ──────────────────────────────────────────────────
   const addStat = () =>
-    setRuleset(r => ({ ...r, stats: [...r.stats, { key: "", label: "", description: "", modifierFormula: "" }] }));
+    setRuleset(r => ({ ...r, stats: [...r.stats, { key: "", label: "", description: "" }] }));
 
   const updateStat = (i: number, patch: Partial<StatDefinition>) =>
     setRuleset(r => ({ ...r, stats: r.stats.map((s, j) => j === i ? { ...s, ...patch } : s) }));
@@ -98,11 +97,31 @@ export default function RulesetEditor() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto justify-center items-center w-full mx-auto px-4 py-6 space-y-6">
-        <div className="max-w-2xl mx-auto flex flex-col gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto py-6" id="ruleset-scroll-area">
+        <div className="max-w-3xl mx-auto px-4 flex gap-6 items-start">
+
+          {/* Sidebar index */}
+          <nav className="w-32 shrink-0 sticky top-6 flex flex-col gap-0.5 pt-1">
+            {[
+              { id: "rs-base", label: "Base Information" },
+              { id: "rs-stats", label: "Stats" },
+              { id: "rs-classes", label: "Classes" },
+            ].map(s => (
+              <button
+                key={s.id}
+                className="text-left border-0! outline-none! ring-0! active:ring-0! bg-transparent! text-gold-600 hover:text-gold-400 text-sm transition-colors justify-start py-1 px-0! h-auto!"
+                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              >
+                {s.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Main content */}
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
 
           {/* ── Base Information ── */}
-          <Section title="Base Information" defaultOpen>
+          <Section id="rs-base" title="Base Information" defaultOpen>
             <div className="flex flex-col gap-3">
               <Field label="Name">
                 <input
@@ -125,7 +144,7 @@ export default function RulesetEditor() {
           </Section>
 
           {/* ── Stats ── */}
-          <Section title="Stats" defaultOpen>
+          <Section id="rs-stats" title="Stats" defaultOpen>
             <div className="flex flex-col gap-4">
 
               {/* Global modifier formula */}
@@ -164,7 +183,7 @@ export default function RulesetEditor() {
               </div>
             </div>
           </Section>
-          <Section title="Classes" defaultOpen>
+          <Section id="rs-classes" title="Classes" defaultOpen>
               {/* Classes */}
               <div className="flex flex-col gap-2">
                 
@@ -204,25 +223,26 @@ export default function RulesetEditor() {
               Save Ruleset
             </button>
           </div>
-        </div>
 
+          </div>{/* end main content */}
 
-        
-      </div>
+        </div>{/* end flex row */}
+      </div>{/* end scroll area */}
     </main>
   );
 }
 
 // ── Sub-components ───────────────────────────────────────────────────
 
-function Section({ title, defaultOpen = false, children }: {
+function Section({ id, title, defaultOpen = false, children }: {
+  id?: string;
   title: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-gold-500/30 rounded-xl overflow-hidden h-fit">
+    <div id={id} className="border border-gold-500/30 rounded-xl overflow-hidden h-fit">
       <button
         className="w-full! border-0! rounded-none! bg-surface! text-left! flex items-center justify-between px-4 py-3 hover:bg-gold-500/5!"
         onClick={() => setOpen(v => !v)}
