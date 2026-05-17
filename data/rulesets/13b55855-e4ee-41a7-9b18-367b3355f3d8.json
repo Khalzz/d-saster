@@ -3,6 +3,7 @@
   "name": "D&D E5",
   "description": "",
   "modifierFormula": "({{stat_points}} - 10) / 2",
+  "skillFormula": "{{stat_mod}}",
   "stats": [
     {
       "key": "str",
@@ -47,6 +48,116 @@
       "name": "Rogue",
       "description": "A stealth agent, dedicated to being agile, not so strong but having a great ability of hiding in plain view, silent, agile and efficient.",
       "modifiers": []
+    }
+  ],
+  "skills": [
+    {
+      "id": "5dd77713-275c-4a97-b22e-147f178bd592",
+      "name": "Acrobatics",
+      "statKey": "dex",
+      "description": " It determines your ability to stay balanced, navigate tricky terrain, and perform physical stunts"
+    },
+    {
+      "id": "e7e071d4-de66-4b43-a6f3-028aaf9233a4",
+      "name": "Animal Handling",
+      "statKey": "wisdom",
+      "description": ""
+    },
+    {
+      "id": "b96644c4-22d8-4ccf-b2a3-b2fd97475bf7",
+      "name": "Arcana",
+      "statKey": "intelligence",
+      "description": ""
+    },
+    {
+      "id": "e3655bb1-2a98-43aa-8f07-8777e82da89a",
+      "name": "Athletics",
+      "statKey": "str",
+      "description": ""
+    },
+    {
+      "id": "6093913e-7d76-4e92-b194-7a7a1f65439a",
+      "name": "Deception",
+      "statKey": "charisma",
+      "description": ""
+    },
+    {
+      "id": "63196faa-d5ca-4842-b44b-420bb9643a8b",
+      "name": "History",
+      "statKey": "intelligence",
+      "description": ""
+    },
+    {
+      "id": "04370dc4-b0f1-4248-a222-2ee2ce5ef887",
+      "name": "Insight",
+      "statKey": "wisdom",
+      "description": ""
+    },
+    {
+      "id": "ff7df345-68c2-4a25-9165-ca7db2913b75",
+      "name": "Intimidation",
+      "statKey": "charisma",
+      "description": ""
+    },
+    {
+      "id": "a4050a5c-1524-4652-93fb-57af3d21f64f",
+      "name": "Investigation",
+      "statKey": "intelligence",
+      "description": ""
+    },
+    {
+      "id": "38d22261-043d-4b1a-9a29-eb0c721a37bd",
+      "name": "Medicine",
+      "statKey": "wisdom",
+      "description": ""
+    },
+    {
+      "id": "9cc2969c-2e9d-4161-9bd8-569e90493ec6",
+      "name": "Nature",
+      "statKey": "intelligence",
+      "description": ""
+    },
+    {
+      "id": "b36982ef-5b27-45ac-af3c-e82ae306a5e2",
+      "name": "Perception",
+      "statKey": "wisdom",
+      "description": ""
+    },
+    {
+      "id": "9ce69cd5-2b28-4950-8fdf-071c4e949d01",
+      "name": "Performance",
+      "statKey": "charisma",
+      "description": ""
+    },
+    {
+      "id": "eb2b4379-2e87-435e-87bb-ea824e98adce",
+      "name": "Persuasion",
+      "statKey": "charisma",
+      "description": ""
+    },
+    {
+      "id": "b5c6cb53-003a-4878-81bf-ead9d83c4b42",
+      "name": "Religion",
+      "statKey": "intelligence",
+      "description": ""
+    },
+    {
+      "id": "bcf2ff4a-7c0b-4b86-8c08-76e0055bc03f",
+      "name": "Sleight of Hand",
+      "statKey": "dex",
+      "description": ""
+    },
+    {
+      "id": "58efb904-22c2-45e5-9922-e1505867808e",
+      "name": "Stealth",
+      "statKey": "dex",
+      "description": ""
+    },
+    {
+      "id": "aeab0004-bcff-482c-86f4-9ee35faff0ad",
+      "name": "Survival",
+      "statKey": "wisdom",
+      "description": ""
     }
   ]
 }

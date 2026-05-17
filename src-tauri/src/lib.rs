@@ -163,6 +163,12 @@ struct CharacterData {
     #[serde(rename = "type")]
     character_type: String,
     stats: HashMap<String, i32>,
+    #[serde(default)]
+    saving_throws: HashMap<String, i32>,
+    #[serde(default)]
+    inspiration: i32,
+    #[serde(default)]
+    proficiency_bonus: i32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -297,14 +303,28 @@ struct RulesetClass {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct RulesetSkill {
+    id: String,
+    name: String,
+    stat_key: String,
+    #[serde(default)]
+    description: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RulesetData {
     id: String,
     name: String,
     description: String,
     #[serde(default)]
     modifier_formula: String,
+    #[serde(default)]
+    skill_formula: String,
     stats: Vec<StatDefinition>,
     classes: Vec<RulesetClass>,
+    #[serde(default)]
+    skills: Vec<RulesetSkill>,
 }
 
 fn rulesets_dir() -> Result<PathBuf, String> {

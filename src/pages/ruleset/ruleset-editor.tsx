@@ -24,13 +24,22 @@ export interface RulesetClass {
   modifiers: RulesetClassModifier[];
 }
 
+export interface RulesetSkill {
+  id: string;
+  name: string;
+  statKey: string;
+  description: string;
+}
+
 export interface Ruleset {
   id: string;
   name: string;
   description: string;
   modifierFormula: string;
+  skillFormula: string;
   stats: StatDefinition[];
   classes: RulesetClass[];
+  skills: RulesetSkill[];
 }
 
 export default function RulesetEditor() {
@@ -40,8 +49,8 @@ export default function RulesetEditor() {
 
   const [ruleset, setRuleset] = useState<Ruleset>(() =>
     state?.existing
-      ? { ...state.existing, modifierFormula: state.existing.modifierFormula || "({{stat_points}} - 10) / 2" }
-      : { id: crypto.randomUUID(), name: "", description: "", modifierFormula: "({{stat_points}} - 10) / 2", stats: [], classes: [] }
+      ? { ...state.existing, modifierFormula: state.existing.modifierFormula || "({{stat_points}} - 10) / 2", skillFormula: state.existing.skillFormula || "{{stat_mod}}", skills: state.existing.skills ?? [] }
+      : { id: crypto.randomUUID(), name: "", description: "", modifierFormula: "({{stat_points}} - 10) / 2", skillFormula: "{{stat_mod}}", stats: [], classes: [], skills: [] }
   );
 
   const handleSave = async () => {
@@ -83,6 +92,16 @@ export default function RulesetEditor() {
   const removeClass = (i: number) =>
     setRuleset(r => ({ ...r, classes: r.classes.filter((_, j) => j !== i) }));
 
+  // ── Skill helpers ──────────────────────────────────────────────────
+  const addSkill = () =>
+    setRuleset(r => ({ ...r, skills: [...r.skills, { id: crypto.randomUUID(), name: "", statKey: r.stats[0]?.key ?? "", description: "" }] }));
+
+  const updateSkill = (i: number, patch: Partial<RulesetSkill>) =>
+    setRuleset(r => ({ ...r, skills: r.skills.map((s, j) => j === i ? { ...s, ...patch } : s) }));
+
+  const removeSkill = (i: number) =>
+    setRuleset(r => ({ ...r, skills: r.skills.filter((_, j) => j !== i) }));
+
 
   return (
     <main className="h-full min-h-screen bg-base flex flex-col">
@@ -97,19 +116,21 @@ export default function RulesetEditor() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto py-6" id="ruleset-scroll-area">
+      <div className="flex-1 min-h-0 overflow-y-auto py-6 scroll-pt-3" id="ruleset-scroll-area">
         <div className="max-w-3xl mx-auto px-4 flex gap-6 items-start">
 
           {/* Sidebar index */}
           <nav className="w-32 shrink-0 sticky top-6 flex flex-col gap-0.5 pt-1">
             {[
               { id: "rs-base", label: "Base Information" },
-              { id: "rs-stats", label: "Stats" },
-              { id: "rs-classes", label: "Classes" },
+              { id: "rs-char-creation", label: "Character creation" },
+              { id: "rs-stats", label: "Stats", indent: true },
+              { id: "rs-classes", label: "Classes", indent: true },
+              { id: "rs-skills", label: "Skills", indent: true },
             ].map(s => (
               <button
                 key={s.id}
-                className="text-left border-0! outline-none! ring-0! active:ring-0! bg-transparent! text-gold-600 hover:text-gold-400 text-sm transition-colors justify-start py-1 px-0! h-auto!"
+                className={`text-left border-0! outline-none! ring-0! active:ring-0! bg-transparent! hover:text-gold-400 text-xs transition-colors justify-start py-1 px-0! h-auto! ${'indent' in s && s.indent ? "pl-3! text-gold-600" : "text-gold-400 font-medium"}`}
                 onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
               >
                 {s.label}
@@ -121,27 +142,40 @@ export default function RulesetEditor() {
           <div className="flex-1 min-w-0 flex flex-col gap-4">
 
           {/* ── Base Information ── */}
-          <Section id="rs-base" title="Base Information" defaultOpen>
-            <div className="flex flex-col gap-3">
-              <Field label="Name">
-                <input
-                  className="field-input"
-                  value={ruleset.name}
-                  onChange={(e) => setRuleset(r => ({ ...r, name: e.target.value }))}
-                  placeholder="D&D 5e, Anima, Pathfinder…"
-                />
-              </Field>
-              <Field label="Description">
-                <textarea
-                  className="field-input resize-none"
-                  rows={3}
-                  value={ruleset.description}
-                  onChange={(e) => setRuleset(r => ({ ...r, description: e.target.value }))}
-                  placeholder="Briefly describe this ruleset…"
-                />
-              </Field>
+          <div id="rs-base" className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 px-1">
+              <h2 className="text-gold-400 text-base font-bold shrink-0">Base Information</h2>
+              <div className="flex-1 h-px bg-gold-500/20" />
             </div>
-          </Section>
+            <Section title="General" defaultOpen>
+              <div className="flex flex-col gap-3">
+                <Field label="Name">
+                  <input
+                    className="field-input"
+                    value={ruleset.name}
+                    onChange={(e) => setRuleset(r => ({ ...r, name: e.target.value }))}
+                    placeholder="D&D 5e, Anima, Pathfinder…"
+                  />
+                </Field>
+                <Field label="Description">
+                  <textarea
+                    className="field-input resize-none"
+                    rows={3}
+                    value={ruleset.description}
+                    onChange={(e) => setRuleset(r => ({ ...r, description: e.target.value }))}
+                    placeholder="Briefly describe this ruleset…"
+                  />
+                </Field>
+              </div>
+            </Section>
+          </div>
+
+          {/* ── Character Creation group ── */}
+          <div id="rs-char-creation" className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 px-1">
+              <h2 className="text-gold-400 text-base font-bold shrink-0">Character creation</h2>
+              <div className="flex-1 h-px bg-gold-500/20" />
+            </div>
 
           {/* ── Stats ── */}
           <Section id="rs-stats" title="Stats" defaultOpen>
@@ -211,6 +245,39 @@ export default function RulesetEditor() {
                 </button>
               </div>
           </Section>
+          <Section id="rs-skills" title="Skills" defaultOpen>
+            <div className="flex flex-col gap-4">
+              <FormulaInput
+                value={ruleset.skillFormula}
+                onChange={(v) => setRuleset(r => ({ ...r, skillFormula: v }))}
+              />
+              <div className="flex flex-col gap-2">
+              <span className="text-gold-400 text-sm font-semibold">Skill list</span>
+              {ruleset.skills.length === 0 && (
+                <p className="text-gold-700 text-xs">No skills defined yet.</p>
+              )}
+              <div className="flex flex-col gap-2">
+                {ruleset.skills.map((skill, i) => (
+                  <SkillCard
+                    key={skill.id}
+                    skill={skill}
+                    stats={ruleset.stats}
+                    onUpdate={(patch) => updateSkill(i, patch)}
+                    onDelete={() => removeSkill(i)}
+                  />
+                ))}
+              </div>
+              <button
+                className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-dashed! border-gold-500/30! text-gold-600! hover:border-gold-500/60! hover:text-gold-400! hover:bg-transparent!"
+                onClick={addSkill}
+              >
+                <Plus className="h-3 w-3" /> Add Skill
+              </button>
+              </div>
+            </div>
+          </Section>
+          </div>{/* end character creation group */}
+
           {/* Actions */}
           <div className="flex justify-end gap-2 pb-2">
             <button className="px-5 h-9! text-xs! border-gold-500/30! text-gold-500!" onClick={() => navigate(-1)}>
@@ -421,3 +488,99 @@ function StatCard({ stat, onUpdate, onRemove, isDragging, onDragStart, onDragEnd
   );
 }
 
+function SkillCard({ skill, stats, onUpdate, onDelete }: {
+  skill: RulesetSkill;
+  stats: StatDefinition[];
+  onUpdate: (patch: Partial<RulesetSkill>) => void;
+  onDelete: () => void;
+}) {
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null);
+  const [descOpen, setDescOpen] = useState(false);
+
+  const selectedStat = stats.find(s => s.key === skill.statKey);
+
+  const openDropdown = () => {
+    const r = triggerRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const spaceBelow = window.innerHeight - r.bottom;
+    if (spaceBelow < 160 && r.top > spaceBelow)
+      setDropdownPos({ bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width });
+    else
+      setDropdownPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  };
+
+  return (
+    <div className="border border-gold-500/20 rounded-lg overflow-hidden bg-surface/40">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <button
+          className="w-4! h-4! min-w-0! p-0! bg-transparent! border-0! text-gold-600! hover:text-gold-400! shrink-0"
+          onClick={() => setDescOpen(v => !v)}
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${descOpen ? "rotate-180" : ""}`} />
+        </button>
+        <input
+          className="bg-transparent outline-none border-0 text-gold-300 text-sm font-medium flex-1 p-0 placeholder:text-gold-700/50"
+          value={skill.name}
+          onChange={(e) => onUpdate({ name: e.target.value })}
+          placeholder="Skill name…"
+        />
+        <div
+          ref={triggerRef}
+          className="flex items-center justify-between gap-1.5 bg-surface border border-gold-500/20 rounded-lg px-2 py-1 cursor-pointer select-none hover:border-gold-500/50 transition-colors w-32 shrink-0"
+          onClick={openDropdown}
+        >
+          <span className={`text-xs truncate ${selectedStat ? "text-gold-300" : "text-gold-600"}`}>
+            {selectedStat?.label ?? "Select stat…"}
+          </span>
+          <ChevronDown className="h-3 w-3 text-gold-600 shrink-0" />
+        </div>
+        <button
+          className="w-6! h-6! min-w-0! p-0! shrink-0 bg-transparent! text-[#ef4444]! border-[#ef4444]/30! hover:bg-[#ef4444]/10!"
+          onClick={onDelete}
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+
+      {descOpen && (
+        <div className="px-3 py-3 bg-base/60 border-t border-gold-500/20">
+          <textarea
+            className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed p-0 m-0 placeholder:text-gold-700/40 overflow-y-auto max-h-48"
+            style={{ fieldSizing: "content" } as React.CSSProperties}
+            value={skill.description}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+            placeholder="Describe this skill…"
+            rows={1}
+          />
+        </div>
+      )}
+
+      {dropdownPos && createPortal(
+        <>
+          <div className="fixed inset-0 z-998" onClick={() => setDropdownPos(null)} />
+          <div
+            style={{ position: "fixed", top: dropdownPos.top, bottom: dropdownPos.bottom, left: dropdownPos.left, width: dropdownPos.width, zIndex: 999 }}
+            className="bg-surface border border-gold-500/40 rounded-lg overflow-hidden shadow-xl max-h-36 flex flex-col"
+          >
+            <div className="overflow-y-auto flex-1">
+              {stats.length === 0
+                ? <p className="text-gold-700 text-xs px-3 py-2">No stats defined yet</p>
+                : stats.map(s => (
+                  <div
+                    key={s.key}
+                    className={`px-3 py-2 cursor-pointer text-xs hover:bg-gold-500/10 transition-colors ${skill.statKey === s.key ? "text-gold-300 bg-gold-500/15" : "text-gold-400"}`}
+                    onClick={() => { onUpdate({ statKey: s.key }); setDropdownPos(null); }}
+                  >
+                    {s.label}
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
