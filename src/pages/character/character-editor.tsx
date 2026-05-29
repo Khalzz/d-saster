@@ -11,6 +11,7 @@ import { SavingThrowsCard } from "./components/SavingThrowsCard";
 import { CharacterSettingsCard } from "./components/CharacterSettingsCard";
 import { SkillsCard } from "./components/SkillsCard";
 import { ValueCell } from "./components/ValueCell";
+import { calcModifier } from "./components/StatCell";
 
 export interface ClassModifier {
   name: string;
@@ -31,13 +32,19 @@ export interface Character {
   origin: string;
   race: string;
   classId?: string;
+  multiclass?: { classId: string; level: number }[];
   rulesetId?: string;
   image?: string;
   type: "player" | "npc";
   stats: Record<string, number>;
   savingThrows: Record<string, number>;
+  skillProficiencies: Record<string, boolean>;
   inspiration: number;
   proficiencyBonus: number;
+  level: number;
+  armorClass: number;
+  initiative: number;
+  speed: number;
 }
 
 const DEFAULT_STAT_DEFS: StatDefinition[] = [
@@ -58,18 +65,25 @@ export default function CharacterEditor() {
   const rulesetDropdownRef = useRef<HTMLDivElement>(null);
 
   const [char, setChar] = useState<Character>(() =>
-    state?.existing ?? {
-      id: crypto.randomUUID(),
-      name: "",
-      description: "",
-      origin: "",
-      race: "",
-      type: "player",
-      stats: { ...DEFAULT_STATS },
-      savingThrows: Object.fromEntries(DEFAULT_STAT_DEFS.map(d => [d.key, 0])),
-      inspiration: 0,
-      proficiencyBonus: 0,
-    }
+    state?.existing
+      ? { ...state.existing, level: state.existing.level ?? 1, skillProficiencies: state.existing.skillProficiencies ?? {} }
+      : {
+          id: crypto.randomUUID(),
+          name: "",
+          description: "",
+          origin: "",
+          race: "",
+          type: "player",
+          stats: { ...DEFAULT_STATS },
+          savingThrows: Object.fromEntries(DEFAULT_STAT_DEFS.map(d => [d.key, 0])),
+          skillProficiencies: {},
+          inspiration: 0,
+          proficiencyBonus: 0,
+          level: 1,
+          armorClass: 10,
+          initiative: 0,
+          speed: 30,
+        }
   );
 
   const [rulesets, setRulesets] = useState<Ruleset[]>([]);
@@ -92,6 +106,10 @@ export default function CharacterEditor() {
   const activeStatDefs = selectedRuleset?.stats.length ? selectedRuleset.stats : DEFAULT_STAT_DEFS;
   const activeClasses: CharacterClass[] = selectedRuleset ? selectedRuleset.classes : classes;
 
+  const dexKey = activeStatDefs.find(s => s.key === "dex")?.key ?? activeStatDefs[1]?.key ?? activeStatDefs[0]?.key ?? "dex";
+  const dexMod = parseInt(calcModifier(char.stats[dexKey] ?? 10, selectedRuleset?.modifierFormula)) || 0;
+  const armorClass = 10 + dexMod;
+
   const selectRuleset = (rulesetId: string | undefined) => {
     const rs = rulesets.find(r => r.id === rulesetId);
     const defs = rs?.stats.length ? rs.stats : DEFAULT_STAT_DEFS;
@@ -110,7 +128,7 @@ export default function CharacterEditor() {
 
   const handleSave = async () => {
     if (!char.name.trim()) { toast.error("Name is required"); return; }
-    await invoke("save_character", { character: { ...char, name: char.name.trim() } }).catch(() => {});
+    await invoke("save_character", { character: { ...char, name: char.name.trim(), armorClass } }).catch(() => {});
     toast.success("Character saved");
     navigate(-1);
   };
@@ -189,7 +207,7 @@ export default function CharacterEditor() {
       <div className="border-b border-gold-500/20 shrink-0" />
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-2 max-w-4xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-2 max-w-4xl mx-auto w-full bg-surface border-x border-gold-500/30">
         <div className="flex gap-3">
 
           {/* Left column */}
@@ -208,8 +226,11 @@ export default function CharacterEditor() {
             />
             <SavingThrowsCard
               statDefs={activeStatDefs}
-              savingThrows={char.savingThrows}
-              onChange={(key, val) => setChar(c => ({ ...c, savingThrows: { ...c.savingThrows, [key]: val } }))}
+              stats={char.stats}
+              savingThrowFormula={selectedRuleset?.savingThrowFormula}
+              modifierFormula={selectedRuleset?.modifierFormula}
+              proficiencyBonus={char.proficiencyBonus}
+              level={char.level}
             />
           </div>
 
@@ -219,7 +240,13 @@ export default function CharacterEditor() {
               char={char}
               selectedRuleset={selectedRuleset}
               activeClasses={activeClasses}
-              onChange={(updates) => setChar(c => ({ ...c, ...updates }))}
+              onChange={(updates) => {
+                // When level changes, recompute D&D proficiency bonus automatically
+                const next = updates.level !== undefined
+                  ? { ...updates, proficiencyBonus: Math.floor((updates.level - 1) / 4) + 2 }
+                  : updates;
+                setChar(c => ({ ...c, ...next }));
+              }}
               onClassCreated={(cls) => setClasses(prev => [...prev, cls])}
               onClassDeleted={(id) => setClasses(prev => prev.filter(c => c.id !== id))}
             />
@@ -230,21 +257,48 @@ export default function CharacterEditor() {
                   ruleset={selectedRuleset}
                   statDefs={activeStatDefs}
                   stats={char.stats}
+                  proficiencies={char.skillProficiencies}
+                  proficiencyBonus={char.proficiencyBonus}
+                  level={char.level}
+                  onProficiencyChange={(id, val) =>
+                    setChar(c => ({ ...c, skillProficiencies: { ...c.skillProficiencies, [id]: val } }))
+                  }
                 />
               )}
-              <div className="flex-1 flex flex-col gap-2">
-                <ValueCell
-                  label="Inspiration"
-                  value={char.inspiration}
-                  onChange={(v) => setChar(c => ({ ...c, inspiration: v }))}
-                />
-                <ValueCell
-                  label="Proficiency Bonus"
-                  value={char.proficiencyBonus}
-                  onChange={(v) => setChar(c => ({ ...c, proficiencyBonus: v }))}
-                />
-                <Card className="flex-1 flex items-center justify-center border-dashed border-gold-500/30 text-gold-700 text-xs">
-                  More features coming soon!
+              <div className="flex-1 flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <ValueCell
+                    label="Inspiration"
+                    value={char.inspiration}
+                    onChange={(v) => setChar(c => ({ ...c, inspiration: v }))}
+                  />
+                  <ValueCell
+                    label="Proficiency Bonus"
+                    value={char.proficiencyBonus}
+                    onChange={(v) => setChar(c => ({ ...c, proficiencyBonus: v }))}
+                    readOnly
+                    hint="from level"
+                  />
+                </div>
+
+                <Card className="flex flex-col gap-1.5" title="Combat">
+                  <ValueCell
+                    label="Armor Class"
+                    value={armorClass}
+                    onChange={() => {}}
+                    readOnly
+                    hint="10 + DEX mod"
+                  />
+                  <ValueCell
+                    label="Initiative"
+                    value={char.initiative}
+                    onChange={(v) => setChar(c => ({ ...c, initiative: v }))}
+                  />
+                  <ValueCell
+                    label="Speed"
+                    value={char.speed}
+                    onChange={(v) => setChar(c => ({ ...c, speed: v }))}
+                  />
                 </Card>
               </div>
             </div>

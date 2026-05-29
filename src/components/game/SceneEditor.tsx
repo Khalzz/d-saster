@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import HexSceneView from "./HexSceneView";
-import { Grid2X2, Hexagon, ImagePlus, X } from "lucide-react";
+import { Grid2X2, Hexagon, ImagePlus, X, Move } from "lucide-react";
 
 export const DEFAULT_CELL_SIZE = 36;
 
 export interface Scene {
   id: string;
   name: string;
-  gridType: "hex" | "square";
+  gridType: "hex" | "square" | "none";
   cols: number;
   rows: number;
   disabledCells: Set<string>;
@@ -23,7 +23,10 @@ interface SceneEditorProps {
   onChange: (scene: Scene) => void;
 }
 
-function computeDims(w: number, h: number, cs: number, gridType: "hex" | "square") {
+function computeDims(w: number, h: number, cs: number, gridType: "hex" | "square" | "none") {
+  if (gridType === "none") {
+    return { cols: 1, rows: 1 };
+  }
   if (gridType === "square") {
     return {
       cols: Math.max(1, Math.ceil((w - cs) / (2 * cs))),
@@ -48,7 +51,7 @@ export default function SceneEditor({ scene, onChange }: SceneEditorProps) {
   // Synchronously compute cols/rows for any scene update that affects grid dimensions.
   // This prevents the two-render gap (cellSize change → cols/rows stale) that makes
   // the bg image jump before the grid catches up.
-  const withDims = (cs: number, gt: "hex" | "square", bgB: { w: number; h: number } | undefined) => {
+  const withDims = (cs: number, gt: "hex" | "square" | "none", bgB: { w: number; h: number } | undefined) => {
     const el = containerRef.current;
     const targetW = bgB?.w ?? el?.clientWidth ?? 0;
     const targetH = bgB?.h ?? el?.clientHeight ?? 0;
@@ -187,6 +190,12 @@ export default function SceneEditor({ scene, onChange }: SceneEditorProps) {
                 onClick={() => onChange({ ...scene, gridType: "hex", ...withDims(scene.cellSize, "hex", scene.bgBounds) })}
               >
                 <Hexagon size={14} /> Hex
+              </button>
+              <button
+                className={`flex-1! flex items-center justify-center gap-1.5 h-8! text-xs! rounded-md! ${scene.gridType === "none" ? "bg-gold-500! text-gray-800!" : ""}`}
+                onClick={() => onChange({ ...scene, gridType: "none", ...withDims(scene.cellSize, "none", scene.bgBounds) })}
+              >
+                <Move size={14} /> Free
               </button>
             </div>
             <div className="flex items-center gap-2">

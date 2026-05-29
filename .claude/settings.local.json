@@ -7,7 +7,22 @@
       "Bash(Select-Object -First 50)",
       "Bash(Format-Table -AutoSize)",
       "Bash(npm install *)",
-      "Bash(pnpm add *)"
+      "Bash(pnpm add *)",
+      "Bash(cat \"C:\\\\Users\\\\Khals\\\\AppData\\\\Local\\\\npm-cache\\\\_logs\\\\2026-05-22T02_23_29_400Z-debug-0.log\" | tail -50)",
+      "Read(//c/Users/Khals/AppData/Local/npm-cache/_logs/**)",
+      "Bash(ls pnpm-lock.yaml)",
+      "Bash(ls package-lock.json)",
+      "Bash(ls yarn.lock)",
+      "Bash(pnpm install *)",
+      "Bash(ls /tmp/claude*)",
+      "Read(//c/Users/Khals/AppData/Local/Temp/claude/**)",
+      "Bash(ls \"C:/Users/Khals/AppData/Local/pnpm-cache\" 2>/dev/null | head -5 || echo \"no pnpm cache\")",
+      "Read(//c/Users/Khals/AppData/Local/pnpm-cache/**)",
+      "Bash(ls \"C:/Users/Khals/AppData/Local/pnpm/store/v10/\" | head -10)",
+      "Read(//c/Users/Khals/AppData/Local/pnpm/store/v10/**)",
+      "Bash(pnpm store *)",
+      "Bash(pnpm --version)",
+      "Bash(Get-Content \"C:\\\\Users\\\\Khals\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Khals-OneDrive-Desktop-d-saster\\\\16a64e0c-c059-4b8d-abda-edd75eea96d6\\\\tasks\\\\ba0o7xtle.output\" -Wait -Tail 20)"
     ]
   }
 }

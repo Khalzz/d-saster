@@ -59,7 +59,7 @@ export function StatCell({ def, val, formula, onChange }: {
         onChange={(e) => setInputVal(e.target.value)}
         onBlur={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") { onChange(e.currentTarget.value); e.currentTarget.blur(); } }}
-        className="w-full text-center outline-none text-gold-600 text-[11px] font-medium rounded-md px-0.5 transition-colors bg-base hover:bg-gold-500/10 cursor-pointer select-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        className="w-full text-center outline-none text-gold-600 text-[11px] font-medium rounded-md px-0.5 transition-colors bg-base hover:bg-gold-500/10 cursor-text select-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
       {tooltipPos && createPortal(
         <div

@@ -7,6 +7,15 @@ export interface SceneNode {
   connections: { top?: string; right?: string; bottom?: string; left?: string };
 }
 
+export interface SavedToken {
+  id: string;
+  characterId: string;
+  name: string;
+  image?: string;
+  col: number;
+  row: number;
+}
+
 export interface Campaign {
   id: string;
   title: string;
@@ -16,6 +25,8 @@ export interface Campaign {
   image?: string;
   scenes?: string[];
   sceneMap?: SceneNode[];
+  lastActiveScene?: string;
+  sceneTokens?: Record<string, SavedToken[]>;
 }
 
 const PRESET_COLORS = [

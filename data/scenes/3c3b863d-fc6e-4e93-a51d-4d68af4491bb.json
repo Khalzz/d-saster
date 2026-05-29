@@ -1,9 +1,9 @@
 {
   "id": "3c3b863d-fc6e-4e93-a51d-4d68af4491bb",
   "name": "Waterfall",
-  "gridType": "square",
-  "cols": 30,
-  "rows": 21,
+  "gridType": "none",
+  "cols": 1,
+  "rows": 1,
   "disabledCells": [
     "30,16",
     "30,17",
@@ -67,6 +67,6 @@
     "h": 1362.0
   },
   "cellSize": 32,
-  "lastEdited": "2026-05-10T21:49:24.973Z",
+  "lastEdited": "2026-05-29T04:33:21.086Z",
   "lastEditor": "DM"
 }

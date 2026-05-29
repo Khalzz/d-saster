@@ -24,10 +24,10 @@ export default function Tooltip({ children, text, className }: { children: React
       {children}
       {visible && createPortal(
         <div
-          className="fixed z-50 -translate-x-1/2 -translate-y-full bg-surface border border-gold-500 text-gold-500 text-sm rounded-md px-2 py-1 pointer-events-none whitespace-nowrap"
+          className="fixed z-50 -translate-x-1/2 -translate-y-full pointer-events-none bg-surface border border-gold-500/30 rounded-lg px-3 py-2 shadow-xl w-max max-w-64"
           style={{ top: pos.top, left: pos.left }}
         >
-          {text}
+          <p className="text-[10px] text-gold-600 leading-snug">{text}</p>
         </div>,
         document.body
       )}

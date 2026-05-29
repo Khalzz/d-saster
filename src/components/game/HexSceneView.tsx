@@ -3,8 +3,8 @@ import type { Scene } from "./SceneEditor";
 
 export const CELL_SIZE = 36;
 
-export function cellCenter(col: number, row: number, gridType: "hex" | "square", cs = CELL_SIZE) {
-  if (gridType === "square") {
+export function cellCenter(col: number, row: number, gridType: "hex" | "square" | "none", cs = CELL_SIZE) {
+  if (gridType === "none" || gridType === "square") {
     return { x: col * cs * 2 + cs, y: row * cs * 2 + cs };
   }
   const w = cs * 2;
@@ -27,6 +27,11 @@ function cellPoints(cx: number, cy: number, r: number, gridType: "hex" | "square
 
 export function gridBounds(scene: Scene) {
   const cs = scene.cellSize;
+  if (scene.gridType === "none") {
+    // No grid; use bg dimensions or a default canvas size
+    if (scene.bgBounds) return { w: scene.bgBounds.w, h: scene.bgBounds.h };
+    return { w: 800, h: 600 };
+  }
   let maxX = 0, maxY = 0;
   for (let c = 0; c < scene.cols; c++) {
     for (let r = 0; r < scene.rows; r++) {
@@ -240,23 +245,25 @@ export default function HexSceneView({ scene, selectedCells, onCellClick, onCell
   };
 
   const cells: React.ReactNode[] = [];
-  for (let c = cMin; c <= cMax; c++) {
-    for (let r = rMin; r <= rMax; r++) {
-      const key = `${c},${r}`;
-      const { x, y } = cellCenter(c, r, gridType, cs);
-      const isDisabled = disabledCells.has(key);
-      const isSelected = selectedCells?.has(key);
-      const baseFill = scene.bg ? (isDisabled ? "transparent" : "rgba(26,26,26,0.55)") : (isDisabled ? "transparent" : "#1a1a1a");
-      cells.push(
-        <polygon
-          key={key}
-          points={cellPoints(x, y, cs, gridType)}
-          fill={isSelected ? (isDisabled ? "rgba(153,27,27,0.15)" : "rgba(59,130,246,0.15)") : baseFill}
-          stroke={isSelected ? (isDisabled ? "rgba(153,27,27,0.5)" : "rgba(59,130,246,0.7)") : isDisabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.11)"}
-          strokeWidth={isSelected ? 2 / gridFit : 1 / gridFit}
-          style={{ cursor: "pointer" }}
-        />
-      );
+  if (gridType !== "none") {
+    for (let c = cMin; c <= cMax; c++) {
+      for (let r = rMin; r <= rMax; r++) {
+        const key = `${c},${r}`;
+        const { x, y } = cellCenter(c, r, gridType, cs);
+        const isDisabled = disabledCells.has(key);
+        const isSelected = selectedCells?.has(key);
+        const baseFill = scene.bg ? (isDisabled ? "transparent" : "rgba(26,26,26,0.55)") : (isDisabled ? "transparent" : "#1a1a1a");
+        cells.push(
+          <polygon
+            key={key}
+            points={cellPoints(x, y, cs, gridType)}
+            fill={isSelected ? (isDisabled ? "rgba(153,27,27,0.15)" : "rgba(59,130,246,0.15)") : baseFill}
+            stroke={isSelected ? (isDisabled ? "rgba(153,27,27,0.5)" : "rgba(59,130,246,0.7)") : isDisabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.11)"}
+            strokeWidth={isSelected ? 2 / gridFit : 1 / gridFit}
+            style={{ cursor: "pointer" }}
+          />
+        );
+      }
     }
   }
 

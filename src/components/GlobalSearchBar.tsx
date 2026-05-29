@@ -4,6 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { Backpack, ImagePlus, Map, User, X } from "lucide-react";
 import Modal from "./ui/modal/Modal";
 import SearchBar from "./ui/searchbar/SearchBar";
+import Input from "./ui/input/Input";
+import Field from "./ui/Field";
 import type { Campaign } from "./campaign/CampaignSelector";
 import type { Character } from "../pages/character/character-editor";
 
@@ -61,7 +63,7 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
     if (sceneIds.includes(target.id)) { setPendingAddScene(null); return; }
     const updated: Campaign = { ...latest, scenes: [...sceneIds, target.id] };
     setSavedCampaigns(prev => prev.map(c => c.id === campaign.id ? updated : c));
-    invoke("save_campaign", { campaign: updated }).catch(() => {});
+    await invoke("save_campaign", { campaign: updated }).catch(() => {});
     window.dispatchEvent(new CustomEvent("campaign-updated"));
     setPendingAddScene(null);
   };
@@ -113,6 +115,13 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
               onCreate: (name) => {
                 setIsOpen(false);
                 navigate("/character-editor", { state: { existing: { id: crypto.randomUUID(), name, description: "", origin: "", race: "", type: "player", stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 } } } });
+              },
+              onSelect: (item) => {
+                const character = characters.find(c => c.id === item.id);
+                if (character) {
+                  setIsOpen(false);
+                  window.dispatchEvent(new CustomEvent("character-selected", { detail: character }));
+                }
               },
               onEdit: (item) => {
                 const character = characters.find(c => c.id === item.id);
@@ -172,24 +181,21 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
         <div className="bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 p-6 w-96 flex flex-col gap-4">
           <p className="text-gold-400 font-medium">Create Scene</p>
-          <div className="flex flex-col gap-1">
-            <label className="text-gold-600 text-xs">Name</label>
-            <input
+          <Field label="Name">
+            <Input
               autoFocus
               value={newSceneName}
-              onChange={(e) => setNewSceneName(e.target.value)}
+              onChange={setNewSceneName}
+              placeholder="Scene name"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newSceneName.trim()) {
                   setShowCreateModal(false);
                   navigate("/scene-editor", { state: { name: newSceneName.trim(), bg: newSceneBg } });
                 }
               }}
-              className="w-full! text-sm!"
-              placeholder="Scene name"
             />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-gold-600 text-xs">Background Image (optional)</label>
+          </Field>
+          <Field label="Background Image (optional)">
             <input
               ref={createBgInputRef}
               type="file"
@@ -205,7 +211,7 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
               }}
             />
             {newSceneBg ? (
-              <div className="relative w-full h-28 rounded-md overflow-hidden border border-gold-500/30">
+              <div className="relative w-full h-28 rounded-md overflow-hidden border border-gold-500/30 bg-base">
                 <img src={newSceneBg} alt="" className="w-full h-full object-cover" />
                 <button
                   onClick={() => setNewSceneBg(undefined)}
@@ -217,13 +223,13 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
             ) : (
               <button
                 onClick={() => createBgInputRef.current?.click()}
-                className="w-full! h-28! flex! flex-col! items-center! justify-center! gap-1! border! border-dashed! border-gold-500/30! rounded-md! text-gold-600!"
+                className="w-full! h-28! flex! flex-col! items-center! justify-center! gap-1! border! border-dashed! border-gold-500/30! rounded-md! bg-base! text-gold-600!"
               >
                 <ImagePlus size={20} />
                 <span className="text-xs">Click to upload</span>
               </button>
             )}
-          </div>
+          </Field>
           <div className="flex gap-2 mt-2">
             <button className="flex-1! text-center" onClick={() => setShowCreateModal(false)}>
               Cancel

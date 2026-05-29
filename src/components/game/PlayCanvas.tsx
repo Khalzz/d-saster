@@ -1,9 +1,11 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import type { Scene } from "./SceneEditor";
 import { cellCenter, gridBounds } from "./HexSceneView";
+import type { Character } from "../../pages/character/character-editor";
+import type { Token } from "../../pages/play/Play";
 
-function cellPoints(cx: number, cy: number, r: number, gridType: "hex" | "square"): string {
-  if (gridType === "square") {
+function cellPoints(cx: number, cy: number, r: number, gridType: "hex" | "square" | "none"): string {
+  if (gridType === "square" || gridType === "none") {
     return `${cx - r},${cy - r} ${cx + r},${cy - r} ${cx + r},${cy + r} ${cx - r},${cy + r}`;
   }
   return Array.from({ length: 6 }, (_, i) => {
@@ -14,12 +16,17 @@ function cellPoints(cx: number, cy: number, r: number, gridType: "hex" | "square
 
 interface PlayCanvasProps {
   scene: Scene;
+  tokens?: Token[];
+  onDropCharacter?: (character: Character, col: number, row: number) => void;
+  onMoveToken?: (tokenId: string, col: number, row: number) => void;
 }
 
-export default function PlayCanvas({ scene }: PlayCanvasProps) {
+const PlayCanvas = forwardRef<HTMLDivElement, PlayCanvasProps>(function PlayCanvas({ scene, tokens = [], onDropCharacter, onMoveToken }, ref) {
   const { cols, rows, gridType, disabledCells } = scene;
   const cs = scene.cellSize;
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => containerRef.current!, []);
   const transformRef = useRef<SVGGElement>(null);
   const camRef = useRef({ x: 0, y: 0, zoom: 1 });
   const gridFitRef = useRef(1);
@@ -63,7 +70,59 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
     }
     applyTransform();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gridType, hasBg]);
+  }, [scene.id, gridType, hasBg]);
+
+  // Center on character when pinned in PlayersDisplay (smooth animation)
+  useEffect(() => {
+    let animFrame: number | null = null;
+    const handler = (e: Event) => {
+      const character = (e as CustomEvent).detail;
+      if (!character?.id) return;
+      const token = tokens.find(t => t.characterId === character.id);
+      if (!token) return;
+      const el = containerRef.current;
+      if (!el) return;
+      const gf = gridFitRef.current;
+      const tx = gridType === "none" ? token.col : cellCenter(token.col, token.row, gridType, cs).x;
+      const ty = gridType === "none" ? token.row : cellCenter(token.col, token.row, gridType, cs).y;
+      const cam = camRef.current;
+
+      // Fixed target zoom level (always the same regardless of current zoom)
+      const clampedZoom = 1.8;
+
+      const targetX = el.clientWidth / 2 - tx * gf * clampedZoom;
+      const targetY = el.clientHeight / 2 - ty * gf * clampedZoom;
+
+      const startX = cam.x;
+      const startY = cam.y;
+      const startZoom = cam.zoom;
+      const duration = 500;
+      const startTime = performance.now();
+
+      if (animFrame) cancelAnimationFrame(animFrame);
+
+      const animate = (now: number) => {
+        const t = Math.min((now - startTime) / duration, 1);
+        // Ease out cubic
+        const ease = 1 - Math.pow(1 - t, 3);
+        camRef.current = {
+          x: startX + (targetX - startX) * ease,
+          y: startY + (targetY - startY) * ease,
+          zoom: startZoom + (clampedZoom - startZoom) * ease,
+        };
+        applyTransform();
+        if (t < 1) {
+          animFrame = requestAnimationFrame(animate);
+        }
+      };
+      animFrame = requestAnimationFrame(animate);
+    };
+    window.addEventListener("center-on-character", handler);
+    return () => {
+      window.removeEventListener("center-on-character", handler);
+      if (animFrame) cancelAnimationFrame(animFrame);
+    };
+  }, [tokens, gridType, cs]);
 
   // Zoom with scroll wheel
   useEffect(() => {
@@ -119,6 +178,12 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
     }
   };
 
+  // Token dragging state (declared early so cells can reference highlight state)
+  const [draggingTokenId, setDraggingTokenId] = useState<string | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const [dragOriginCell, setDragOriginCell] = useState<{ col: number; row: number } | null>(null);
+  const [dragHoverCell, setDragHoverCell] = useState<{ col: number; row: number } | null>(null);
+
   // Render cells (read-only, no selection)
   const hexBleed = scene.bg && gridType === "hex";
   const rMin = hexBleed ? -1 : 0;
@@ -127,22 +192,174 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
   const cMax = hexBleed ? cols : cols - 1;
 
   const cells: React.ReactNode[] = [];
-  for (let c = cMin; c <= cMax; c++) {
-    for (let r = rMin; r <= rMax; r++) {
-      const key = `${c},${r}`;
-      const { x, y } = cellCenter(c, r, gridType, cs);
-      const isDisabled = disabledCells.has(key);
-      cells.push(
-        <polygon
-          key={key}
-          points={cellPoints(x, y, cs, gridType)}
-          fill="transparent"
-          stroke={isDisabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.11)"}
-          strokeWidth={1 / gridFit}
-        />
-      );
+  if (gridType !== "none") {
+    for (let c = cMin; c <= cMax; c++) {
+      for (let r = rMin; r <= rMax; r++) {
+        const key = `${c},${r}`;
+        const { x, y } = cellCenter(c, r, gridType, cs);
+        const isDisabled = disabledCells.has(key);
+        const isOrigin = dragOriginCell?.col === c && dragOriginCell?.row === r;
+        const isHover = dragHoverCell?.col === c && dragHoverCell?.row === r && !isOrigin;
+        let stroke = isDisabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.11)";
+        if (isOrigin) stroke = "rgba(212,175,55,0.6)";
+        if (isHover) stroke = "rgba(212,175,55,0.9)";
+        cells.push(
+          <polygon
+            key={key}
+            points={cellPoints(x, y, cs, gridType)}
+            fill="transparent"
+            stroke={stroke}
+            strokeWidth={isOrigin || isHover ? 2 / gridFit : 1 / gridFit}
+          />
+        );
+      }
     }
   }
+
+  // Find the grid cell under a screen point
+  const cellAtPoint = useCallback((clientX: number, clientY: number): { col: number; row: number } | null => {
+    const el = containerRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const cam = camRef.current;
+    const gf = gridFitRef.current;
+    // Convert screen coords to SVG grid coords
+    const svgX = ((clientX - rect.left) - cam.x) / cam.zoom / gf;
+    const svgY = ((clientY - rect.top) - cam.y) / cam.zoom / gf;
+
+    if (scene.gridType === "none") {
+      // Free mode: return pixel coords directly
+      return { col: Math.round(svgX), row: Math.round(svgY) };
+    }
+
+    const { cols: maxC, rows: maxR, gridType: gt, cellSize: cellS } = scene;
+    let bestCol = 0, bestRow = 0, bestDist = Infinity;
+    for (let c = 0; c < maxC; c++) {
+      for (let r = 0; r < maxR; r++) {
+        const { x, y } = cellCenter(c, r, gt, cellS);
+        const d = (x - svgX) ** 2 + (y - svgY) ** 2;
+        if (d < bestDist) { bestDist = d; bestCol = c; bestRow = r; }
+      }
+    }
+    return { col: bestCol, row: bestRow };
+  }, [scene]);
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData("application/json");
+    if (!data) return;
+    const cell = cellAtPoint(e.clientX, e.clientY);
+    if (!cell) return;
+
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.id && onDropCharacter) {
+        onDropCharacter(parsed as Character, cell.col, cell.row);
+      }
+    } catch { /* ignore */ }
+  };
+
+  // Token dragging via mouse events (not HTML5 drag-and-drop)
+  const onTokenMouseDown = (e: React.MouseEvent, token: Token) => {
+    if (e.button !== 0) return; // left click only
+    e.stopPropagation();
+    e.preventDefault();
+    setDraggingTokenId(token.id);
+    setDragOriginCell({ col: token.col, row: token.row });
+    setDragHoverCell({ col: token.col, row: token.row });
+
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cam = camRef.current;
+    const gf = gridFitRef.current;
+    // Convert to grid-space for initial position
+    const toGrid = (cx: number, cy: number) => ({
+      x: ((cx - rect.left) - cam.x) / cam.zoom / gf,
+      y: ((cy - rect.top) - cam.y) / cam.zoom / gf,
+    });
+
+    setDragPos(toGrid(e.clientX, e.clientY));
+
+    const onMove = (ev: MouseEvent) => {
+      const r = el.getBoundingClientRect();
+      const c = camRef.current;
+      const g = gridFitRef.current;
+      setDragPos({
+        x: ((ev.clientX - r.left) - c.x) / c.zoom / g,
+        y: ((ev.clientY - r.top) - c.y) / c.zoom / g,
+      });
+      const hover = cellAtPoint(ev.clientX, ev.clientY);
+      if (hover) setDragHoverCell(hover);
+    };
+
+    const onUp = (ev: MouseEvent) => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      const cell = cellAtPoint(ev.clientX, ev.clientY);
+      if (cell && onMoveToken) {
+        onMoveToken(token.id, cell.col, cell.row);
+      }
+      setDraggingTokenId(null);
+      setDragPos(null);
+      setDragOriginCell(null);
+      setDragHoverCell(null);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  // Render tokens
+  const tokenElements = tokens.map(token => {
+    const isDragging = draggingTokenId === token.id;
+    const cellX = gridType === "none" ? token.col : cellCenter(token.col, token.row, gridType, cs).x;
+    const cellY = gridType === "none" ? token.row : cellCenter(token.col, token.row, gridType, cs).y;
+    const x = isDragging && dragPos ? dragPos.x : cellX;
+    const y = isDragging && dragPos ? dragPos.y : cellY;
+    const tokenRadius = cs * 0.75;
+    const clipId = `token-clip-${token.id}`;
+    return (
+      <g key={token.id} style={{ opacity: isDragging ? 0.8 : 1, cursor: "grab" }}>
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx={x} cy={y} r={tokenRadius} />
+          </clipPath>
+        </defs>
+        {token.image ? (
+          <image
+            href={token.image}
+            x={x - tokenRadius}
+            y={y - tokenRadius}
+            width={tokenRadius * 2}
+            height={tokenRadius * 2}
+            clipPath={`url(#${clipId})`}
+            preserveAspectRatio="xMidYMid slice"
+          />
+        ) : (
+          <circle cx={x} cy={y} r={tokenRadius} fill="rgba(180,130,50,0.6)" />
+        )}
+        <circle
+          cx={x} cy={y} r={tokenRadius}
+          fill="transparent"
+          stroke="rgba(212,175,55,0.8)"
+          strokeWidth={2 / gridFit}
+        />
+        {/* Interaction area */}
+        <circle
+          cx={x} cy={y} r={tokenRadius}
+          fill="transparent"
+          style={{ cursor: isDragging ? "grabbing" : "grab" }}
+          onMouseDown={(e) => onTokenMouseDown(e, token)}
+        />
+      </g>
+    );
+  });
 
   return (
     <div
@@ -150,6 +367,8 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
       className="w-full h-full overflow-hidden relative"
       onMouseDown={onMouseDown}
       onContextMenu={(e) => e.preventDefault()}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       style={{ cursor: panning ? "grabbing" : "default" }}
     >
       <svg width="100%" height="100%">
@@ -166,9 +385,12 @@ export default function PlayCanvas({ scene }: PlayCanvasProps) {
               />
             )}
             {cells}
+            {tokenElements}
           </g>
         </g>
       </svg>
     </div>
   );
-}
+});
+
+export default PlayCanvas;

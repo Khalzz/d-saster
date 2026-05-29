@@ -47,10 +47,15 @@ interface Props {
   activeSceneId: string | null;
 }
 
+// Module-level cache so scene data persists across mounts (navigation)
+const scenesCache: Record<string, SavedSceneData[]> = {};
+
 export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const [scenes, setScenes] = useState<SavedSceneData[]>([]);
+  const cached = scenesCache[campaign.id];
+  const [scenes, setScenes] = useState<SavedSceneData[]>(cached ?? []);
+  const [scenesLoaded, setScenesLoaded] = useState(!!cached);
   const [nodes, setNodes] = useState<SceneNode[]>(campaign.sceneMap ?? []);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -68,9 +73,12 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
 
   // Load campaign scenes
   useEffect(() => {
-    invoke<SavedSceneData[]>("list_scenes").then(all =>
-      setScenes(all.filter(s => (campaign.scenes ?? []).includes(s.id)))
-    ).catch(() => {});
+    invoke<SavedSceneData[]>("list_scenes").then(all => {
+      const filtered = all.filter(s => (campaign.scenes ?? []).includes(s.id));
+      scenesCache[campaign.id] = filtered;
+      setScenes(filtered);
+      setScenesLoaded(true);
+    }).catch(() => setScenesLoaded(true));
   }, [campaign]);
 
   // Auto-add nodes for scenes not yet on the map
@@ -331,7 +339,6 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
   };
 
   const deleteScene = async (id: string) => {
-    await invoke("delete_scene", { id }).catch(() => {});
     const updatedNodes = nodes
       .filter(n => n.id !== id)
       .map(n => {
@@ -343,9 +350,8 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
       });
     const updatedScenes = (campaign.scenes ?? []).filter(s => s !== id);
     const updatedCampaign = { ...campaign, sceneMap: updatedNodes, scenes: updatedScenes };
-    invoke("save_campaign", { campaign: updatedCampaign }).then(() => {
-      window.dispatchEvent(new Event("campaign-updated"));
-    }).catch(() => {});
+    await invoke("save_campaign", { campaign: updatedCampaign }).catch(() => {});
+    window.dispatchEvent(new Event("campaign-updated"));
     setNodes(updatedNodes);
     setScenes(prev => prev.filter(s => s.id !== id));
     setPendingDelete(null);
@@ -420,6 +426,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
       >
         {/* Center button */}
         <button onClick={fitView} className="absolute bottom-3 right-3 z-10 p-1.5 text-gold-600 hover:text-gold-400 bg-base/80 rounded" title="Center"><Crosshair className="h-4 w-4" /></button>
+        {scenesLoaded && (<>
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ overflow: "visible" }}
@@ -500,6 +507,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
             );
           })}
         </div>
+        </>)}
 
         {/* Context menu */}
         {contextMenu && (() => {
@@ -540,10 +548,10 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
               <div className="bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 p-6 w-80 flex flex-col gap-4">
                 <div className="flex items-center gap-2 text-red-400">
                   <Trash2 className="h-4 w-4 shrink-0" />
-                  <p className="font-semibold text-sm">Delete Scene</p>
+                  <p className="font-semibold text-sm">Remove Scene</p>
                 </div>
                 <p className="text-gold-400 text-xs">
-                  Are you sure you want to delete <span className="font-semibold text-gold-200">"{sceneName}"</span> from this campaign?
+                  Remove <span className="font-semibold text-gold-200">"{sceneName}"</span> from this campaign? The scene will still be available in the search bar.
                 </p>
                 <div className="flex gap-2 justify-end">
                   <button
@@ -556,7 +564,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
                     className="px-3 py-1.5 text-xs text-red-500 rounded border border-red-500 hover:bg-red-500 hover:text-white transition-colors"
                     onClick={() => deleteScene(pendingDelete)}
                   >
-                    Delete
+                    Remove
                   </button>
                 </div>
               </div>
@@ -565,7 +573,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
         })()}
 
         {/* Empty state */}
-        {nodes.length === 0 && (
+        {scenesLoaded && nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="text-gold-700 text-xs text-center px-4">
               No scenes added yet. Add scenes to this campaign using the search bar.

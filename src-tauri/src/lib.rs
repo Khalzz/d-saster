@@ -80,6 +80,17 @@ struct SceneNode {
     connections: SceneNodeConnections,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct SceneToken {
+    id: String,
+    character_id: String,
+    name: String,
+    image: Option<String>,
+    col: i32,
+    row: i32,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CampaignData {
@@ -91,6 +102,10 @@ struct CampaignData {
     image: Option<String>,
     scenes: Option<Vec<String>>,
     scene_map: Option<Vec<SceneNode>>,
+    #[serde(default)]
+    last_active_scene: Option<String>,
+    #[serde(default)]
+    scene_tokens: Option<HashMap<String, Vec<SceneToken>>>,
 }
 
 fn campaigns_dir() -> Result<PathBuf, String> {
@@ -166,10 +181,24 @@ struct CharacterData {
     #[serde(default)]
     saving_throws: HashMap<String, i32>,
     #[serde(default)]
+    skill_proficiencies: HashMap<String, bool>,
+    #[serde(default)]
     inspiration: i32,
     #[serde(default)]
     proficiency_bonus: i32,
+    #[serde(default = "default_level")]
+    level: i32,
+    #[serde(default = "default_armor_class")]
+    armor_class: i32,
+    #[serde(default)]
+    initiative: i32,
+    #[serde(default = "default_speed")]
+    speed: i32,
 }
+
+fn default_level() -> i32 { 1 }
+fn default_armor_class() -> i32 { 10 }
+fn default_speed() -> i32 { 30 }
 
 #[derive(Serialize, Deserialize)]
 struct ClassModifier {

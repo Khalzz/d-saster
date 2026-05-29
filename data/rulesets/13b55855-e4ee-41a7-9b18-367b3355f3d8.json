@@ -3,7 +3,7 @@
   "name": "D&D E5",
   "description": "",
   "modifierFormula": "({{stat_points}} - 10) / 2",
-  "skillFormula": "{{stat_mod}}",
+  "skillFormula": "{{stat_mod}} + {{proficiency_bonus}}",
   "stats": [
     {
       "key": "str",
@@ -47,6 +47,12 @@
       "id": "9a4a02b0-495c-409a-a434-d920364a38fa",
       "name": "Rogue",
       "description": "A stealth agent, dedicated to being agile, not so strong but having a great ability of hiding in plain view, silent, agile and efficient.",
+      "modifiers": []
+    },
+    {
+      "id": "231fa5ec-0490-49bf-81f7-18ed19a561e4",
+      "name": "Wizard",
+      "description": "he launches stuff **very hard**",
       "modifiers": []
     }
   ],
