@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
-import { ChevronDown, ChevronLeft, Pencil, Plus, Save } from "lucide-react";
+import { ChevronDown, ChevronLeft, Pencil, Plus, Save, UserRound, Sword } from "lucide-react";
 import toast from "react-hot-toast";
-import type { Ruleset, StatDefinition } from "../ruleset/ruleset-editor";
-import Card from "../../components/ui/card/card";
-import { PortraitPicker } from "./components/PortraitPicker";
-import { StatsCard } from "./components/StatsCard";
-import { SavingThrowsCard } from "./components/SavingThrowsCard";
-import { CharacterSettingsCard } from "./components/CharacterSettingsCard";
-import { SkillsCard } from "./components/SkillsCard";
-import { ValueCell } from "./components/ValueCell";
-import { calcModifier } from "./components/StatCell";
+import type { Ruleset, StatDefinition, RulesetSkill } from "../ruleset/ruleset-editor";
+import { CharacterSheetView } from "./components/CharacterSheetView";
 
 export interface ClassModifier {
   name: string;
@@ -38,6 +31,7 @@ export interface Character {
   type: "player" | "npc";
   stats: Record<string, number>;
   savingThrows: Record<string, number>;
+  savingThrowProficiencies: Record<string, boolean>;
   skillProficiencies: Record<string, boolean>;
   inspiration: number;
   proficiencyBonus: number;
@@ -66,7 +60,7 @@ export default function CharacterEditor() {
 
   const [char, setChar] = useState<Character>(() =>
     state?.existing
-      ? { ...state.existing, level: state.existing.level ?? 1, skillProficiencies: state.existing.skillProficiencies ?? {} }
+      ? { ...state.existing, level: state.existing.level ?? 1, skillProficiencies: state.existing.skillProficiencies ?? {}, savingThrowProficiencies: state.existing.savingThrowProficiencies ?? {} }
       : {
           id: crypto.randomUUID(),
           name: "",
@@ -76,6 +70,7 @@ export default function CharacterEditor() {
           type: "player",
           stats: { ...DEFAULT_STATS },
           savingThrows: Object.fromEntries(DEFAULT_STAT_DEFS.map(d => [d.key, 0])),
+          savingThrowProficiencies: {},
           skillProficiencies: {},
           inspiration: 0,
           proficiencyBonus: 0,
@@ -103,12 +98,9 @@ export default function CharacterEditor() {
   }, [showRulesetDropdown]);
 
   const selectedRuleset = rulesets.find(r => r.id === char.rulesetId);
-  const activeStatDefs = selectedRuleset?.stats.length ? selectedRuleset.stats : DEFAULT_STAT_DEFS;
+  const activeStatDefs: StatDefinition[] = selectedRuleset?.stats.length ? selectedRuleset.stats : DEFAULT_STAT_DEFS;
   const activeClasses: CharacterClass[] = selectedRuleset ? selectedRuleset.classes : classes;
-
-  const dexKey = activeStatDefs.find(s => s.key === "dex")?.key ?? activeStatDefs[1]?.key ?? activeStatDefs[0]?.key ?? "dex";
-  const dexMod = parseInt(calcModifier(char.stats[dexKey] ?? 10, selectedRuleset?.modifierFormula)) || 0;
-  const armorClass = 10 + dexMod;
+  const activeSkills: RulesetSkill[] = selectedRuleset?.skills ?? [];
 
   const selectRuleset = (rulesetId: string | undefined) => {
     const rs = rulesets.find(r => r.id === rulesetId);
@@ -121,14 +113,9 @@ export default function CharacterEditor() {
     setShowRulesetDropdown(false);
   };
 
-  const setStat = (key: string, raw: string) => {
-    const val = Math.max(1, Math.min(30, parseInt(raw) || 1));
-    setChar(c => ({ ...c, stats: { ...c.stats, [key]: val } }));
-  };
-
   const handleSave = async () => {
     if (!char.name.trim()) { toast.error("Name is required"); return; }
-    await invoke("save_character", { character: { ...char, name: char.name.trim(), armorClass } }).catch(() => {});
+    await invoke("save_character", { character: { ...char, name: char.name.trim() } }).catch(() => {});
     toast.success("Character saved");
     navigate(-1);
   };
@@ -144,6 +131,23 @@ export default function CharacterEditor() {
           {state?.existing ? "Edit Character" : "New Character"}
         </h1>
         <div className="flex-1" />
+
+        {/* Player / NPC toggle */}
+        <div className="flex rounded-lg overflow-hidden border border-gold-500/40 shrink-0">
+          <button
+            className={`h-8! px-2.5! text-xs! border-0! rounded-none! flex items-center gap-1.5 ${char.type === "player" ? "bg-gold-500! text-gray-900!" : "bg-transparent! text-gold-500! hover:bg-gold-500/10!"}`}
+            onClick={() => setChar(c => ({ ...c, type: "player" }))}
+          >
+            <UserRound className="h-3.5 w-3.5" /> Player
+          </button>
+          <div className="w-px bg-gold-500/40 shrink-0" />
+          <button
+            className={`h-8! px-2.5! text-xs! border-0! rounded-none! flex items-center gap-1.5 ${char.type === "npc" ? "bg-gold-500! text-gray-900!" : "bg-transparent! text-gold-500! hover:bg-gold-500/10!"}`}
+            onClick={() => setChar(c => ({ ...c, type: "npc" }))}
+          >
+            <Sword className="h-3.5 w-3.5" /> NPC
+          </button>
+        </div>
 
         {/* Ruleset selector */}
         <div className="relative shrink-0" ref={rulesetDropdownRef}>
@@ -206,105 +210,17 @@ export default function CharacterEditor() {
       </div>
       <div className="border-b border-gold-500/20 shrink-0" />
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-2 max-w-4xl mx-auto w-full bg-surface border-x border-gold-500/30">
-        <div className="flex gap-3">
-
-          {/* Left column */}
-          <div className="flex flex-col gap-4 w-52 shrink-0">
-            <PortraitPicker
-              image={char.image}
-              type={char.type}
-              onImageChange={(img) => setChar(c => ({ ...c, image: img }))}
-              onTypeChange={(type) => setChar(c => ({ ...c, type }))}
-            />
-            <StatsCard
-              statDefs={activeStatDefs}
-              stats={char.stats}
-              modifierFormula={selectedRuleset?.modifierFormula}
-              onChange={setStat}
-            />
-            <SavingThrowsCard
-              statDefs={activeStatDefs}
-              stats={char.stats}
-              savingThrowFormula={selectedRuleset?.savingThrowFormula}
-              modifierFormula={selectedRuleset?.modifierFormula}
-              proficiencyBonus={char.proficiencyBonus}
-              level={char.level}
-            />
-          </div>
-
-          {/* Right column */}
-          <div className="flex-1 flex flex-col gap-4">
-            <CharacterSettingsCard
-              char={char}
-              selectedRuleset={selectedRuleset}
-              activeClasses={activeClasses}
-              onChange={(updates) => {
-                // When level changes, recompute D&D proficiency bonus automatically
-                const next = updates.level !== undefined
-                  ? { ...updates, proficiencyBonus: Math.floor((updates.level - 1) / 4) + 2 }
-                  : updates;
-                setChar(c => ({ ...c, ...next }));
-              }}
-              onClassCreated={(cls) => setClasses(prev => [...prev, cls])}
-              onClassDeleted={(id) => setClasses(prev => prev.filter(c => c.id !== id))}
-            />
-
-            <div className="flex flex-row gap-2">
-              {selectedRuleset && (
-                <SkillsCard
-                  ruleset={selectedRuleset}
-                  statDefs={activeStatDefs}
-                  stats={char.stats}
-                  proficiencies={char.skillProficiencies}
-                  proficiencyBonus={char.proficiencyBonus}
-                  level={char.level}
-                  onProficiencyChange={(id, val) =>
-                    setChar(c => ({ ...c, skillProficiencies: { ...c.skillProficiencies, [id]: val } }))
-                  }
-                />
-              )}
-              <div className="flex-1 flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <ValueCell
-                    label="Inspiration"
-                    value={char.inspiration}
-                    onChange={(v) => setChar(c => ({ ...c, inspiration: v }))}
-                  />
-                  <ValueCell
-                    label="Proficiency Bonus"
-                    value={char.proficiencyBonus}
-                    onChange={(v) => setChar(c => ({ ...c, proficiencyBonus: v }))}
-                    readOnly
-                    hint="from level"
-                  />
-                </div>
-
-                <Card className="flex flex-col gap-1.5" title="Combat">
-                  <ValueCell
-                    label="Armor Class"
-                    value={armorClass}
-                    onChange={() => {}}
-                    readOnly
-                    hint="10 + DEX mod"
-                  />
-                  <ValueCell
-                    label="Initiative"
-                    value={char.initiative}
-                    onChange={(v) => setChar(c => ({ ...c, initiative: v }))}
-                  />
-                  <ValueCell
-                    label="Speed"
-                    value={char.speed}
-                    onChange={(v) => setChar(c => ({ ...c, speed: v }))}
-                  />
-                </Card>
-              </div>
-            </div>
-          </div>
-
-        </div>
+      {/* Body — interactive sheet */}
+      <div className="flex-1 overflow-y-scroll max-w-4xl mx-auto w-full bg-surface border-x border-gold-500/30">
+        <CharacterSheetView
+          char={char}
+          onChange={(patch) => setChar(c => ({ ...c, ...patch }))}
+          ruleset={selectedRuleset}
+          statDefs={activeStatDefs}
+          skills={activeSkills}
+          classes={activeClasses}
+          onClassCreated={(cls) => setClasses(prev => [...prev, cls])}
+        />
       </div>
     </main>
   );

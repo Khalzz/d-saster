@@ -1,5 +1,27 @@
 // ── Node types ─────────────────────────────────────────────────────────────
-export type NodeType = "section" | "row" | "column";
+export type NodeType = string;
+
+// ── Node type config (passed to the editor) ────────────────────────────────
+export interface NodeTypeConfig {
+  icon: React.ReactNode;
+  label: string;
+  allowedChildren: string[];
+  factory: () => LayoutNode;
+  Preview: React.ComponentType<NodePreviewProps>;
+  Settings: React.ComponentType<NodeSettingsProps>;
+}
+
+export interface NodePreviewProps {
+  node: LayoutNode;
+  selectedIds: Set<string>;
+  onSelect: (id: string) => void;
+  renderChildren: (children: LayoutNode[]) => React.ReactNode;
+}
+
+export interface NodeSettingsProps {
+  settings: Record<string, unknown>;
+  onChange: (patch: Record<string, unknown>) => void;
+}
 
 // ── Shared settings present on every node ──────────────────────────────────
 export interface NodeSettings {
@@ -10,19 +32,75 @@ export interface NodeSettings {
 // ── Per-type settings ──────────────────────────────────────────────────────
 export interface SectionSettings extends NodeSettings {
   title: string;
+  width: number; // percentage, 0 = full width
+  description: string;
 }
 
-export interface RowSettings extends NodeSettings {}
-
-export interface ColumnSettings extends NodeSettings {
+export interface ContainerSettings extends NodeSettings {
+  title: string;
+  direction: "horizontal" | "vertical";
   width: number;     // percentage (1-100), 0 = auto (flex-grow)
+}
+
+export interface ImageSettings extends NodeSettings {
+  width: number;     // percentage (1-100), 0 = auto
+  height: number;    // px, 0 = auto
+  squared: boolean;  // force 1:1 aspect ratio
+}
+
+export interface TextInputSettings extends NodeSettings {
+  label: string;
+  placeholder: string;
+}
+
+export interface LevelCountSettings extends NodeSettings {
+  label: string;
+  min: number;
+  max: number;
+}
+
+export interface ClassSelectorSettings extends NodeSettings {
+  label: string;
+  allowMulticlass: boolean;
+}
+
+export interface GridSettings extends NodeSettings {
+  columns: number;   // number of grid columns
+  rows: number;      // number of grid rows (0 = auto)
+}
+
+export interface StatSettings extends NodeSettings {
+  statKey: string;   // key referencing a StatDefinition from the ruleset
+  width: number;     // percentage (1-100), 0 = auto
+}
+
+export interface AutoStatsSettings extends NodeSettings {
+  columns: number;   // grid columns for the auto-rendered stats
+  width: number;     // percentage (1-100), 0 = auto
+  statKeys: string[]; // empty = all stats from ruleset
+}
+
+export interface AutoSkillsSettings extends NodeSettings {
+  columns: number;   // grid columns for the auto-rendered skills
+  width: number;     // percentage (1-100), 0 = auto
+}
+
+export interface AutoSavingThrowsSettings extends NodeSettings {
+  columns: number;
+  formula: string;
+  width: number;     // percentage (1-100), 0 = auto
+}
+
+export interface ProficiencyBonusSettings extends NodeSettings {
+  formula: string;   // handlebar formula, default: "Math.floor(({{level}} - 1) / 4) + 2"
+  width: number;     // percentage (1-100), 0 = auto
 }
 
 // ── The recursive layout node ──────────────────────────────────────────────
 export interface LayoutNode {
   id: string;
   type: NodeType;
-  settings: SectionSettings | RowSettings | ColumnSettings;
+  settings: SectionSettings | ContainerSettings | ImageSettings | TextInputSettings | LevelCountSettings | ClassSelectorSettings | GridSettings | StatSettings | AutoStatsSettings | AutoSkillsSettings | AutoSavingThrowsSettings | ProficiencyBonusSettings;
   children: LayoutNode[];
 }
 
@@ -31,25 +109,106 @@ export function createSectionNode(title = "Section"): LayoutNode {
   return {
     id: crypto.randomUUID(),
     type: "section",
-    settings: { title, padding: 8, gap: 8 } satisfies SectionSettings,
+    settings: { title, padding: 8, gap: 8, width: 0, description: "" } satisfies SectionSettings,
     children: [],
   };
 }
 
-export function createRowNode(): LayoutNode {
+export function createContainerNode(direction: "horizontal" | "vertical" = "horizontal", width = 0): LayoutNode {
   return {
     id: crypto.randomUUID(),
-    type: "row",
-    settings: { padding: 0, gap: 8 } satisfies RowSettings,
+    type: "container",
+    settings: { title: "Container", direction, width, padding: 0, gap: 8 } satisfies ContainerSettings,
     children: [],
   };
 }
 
-export function createColumnNode(width = 0): LayoutNode {
+export function createImageNode(): LayoutNode {
   return {
     id: crypto.randomUUID(),
-    type: "column",
-    settings: { width, padding: 0, gap: 8 } satisfies ColumnSettings,
+    type: "image",
+    settings: { width: 0, height: 0, squared: false, padding: 0, gap: 0 } satisfies ImageSettings,
+    children: [],
+  };
+}
+
+export function createTextInputNode(label = "Label"): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "text-input",
+    settings: { label, placeholder: "", padding: 0, gap: 0 } satisfies TextInputSettings,
+    children: [],
+  };
+}
+
+export function createLevelCountNode(label = "Level"): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "level-count",
+    settings: { label, min: 0, max: 20, padding: 0, gap: 0 } satisfies LevelCountSettings,
+    children: [],
+  };
+}
+
+export function createClassSelectorNode(label = "Class"): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "class-selector",
+    settings: { label, allowMulticlass: true, padding: 0, gap: 0 } satisfies ClassSelectorSettings,
+    children: [],
+  };
+}
+
+export function createGridNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "grid",
+    settings: { columns: 2, rows: 0, padding: 0, gap: 4 } satisfies GridSettings,
+    children: [],
+  };
+}
+
+export function createStatNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "stat",
+    settings: { statKey: "", padding: 0, gap: 0, width: 0 } satisfies StatSettings,
+    children: [],
+  };
+}
+
+export function createAutoStatsNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "auto-stats",
+    settings: { columns: 2, padding: 0, gap: 4, width: 0, statKeys: [] } satisfies AutoStatsSettings,
+    children: [],
+  };
+}
+
+export function createAutoSkillsNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "auto-skills",
+    settings: { columns: 2, padding: 0, gap: 4, width: 0 } satisfies AutoSkillsSettings,
+    children: [],
+  };
+}
+
+export function createAutoSavingThrowsNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "auto-saving-throws",
+    settings: { columns: 3, padding: 0, gap: 4, formula: "{{stat_mod}} + {{proficiency_bonus}}", width: 0 } satisfies AutoSavingThrowsSettings,
+    children: [],
+  };
+}
+
+export function createProficiencyBonusNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "proficiency-bonus",
+    settings: { formula: "Math.floor(({{level}} - 1) / 4) + 2", width: 0, padding: 0, gap: 0 } satisfies ProficiencyBonusSettings,
     children: [],
   };
 }
@@ -90,7 +249,7 @@ export function removeNode(
 export function updateNodeSettings(
   nodes: LayoutNode[],
   targetId: string,
-  patch: Partial<SectionSettings & RowSettings & ColumnSettings>,
+  patch: Partial<SectionSettings & ContainerSettings>,
 ): LayoutNode[] {
   return nodes.map((node) => {
     if (node.id === targetId) {
@@ -157,7 +316,7 @@ export function moveNode(
 }
 
 /** Insert a node before or after a sibling at any depth. */
-function insertAdjacent(
+export function insertAdjacent(
   nodes: LayoutNode[],
   siblingId: string,
   newNode: LayoutNode,
@@ -172,6 +331,16 @@ function insertAdjacent(
     ...node,
     children: insertAdjacent(node.children, siblingId, newNode, position),
   }));
+}
+
+/** Deep-clone a node, assigning new IDs to it and all descendants. */
+export function cloneNode(node: LayoutNode): LayoutNode {
+  return {
+    ...node,
+    id: crypto.randomUUID(),
+    settings: { ...node.settings },
+    children: node.children.map(cloneNode),
+  };
 }
 
 /** Move a node up or down among its siblings. Returns unchanged tree if at boundary. */

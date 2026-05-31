@@ -403,6 +403,66 @@ fn delete_ruleset(id: String) -> Result<(), String> {
     Ok(())
 }
 
+// ── Sheets ─────────────────────────────────────────────────────────────────
+
+fn sheets_dir() -> Result<PathBuf, String> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("could not resolve project root")?
+        .to_path_buf();
+    Ok(root.join("data").join("sheets"))
+}
+
+#[tauri::command]
+fn save_sheet(id: String, data: serde_json::Value) -> Result<(), String> {
+    let dir = sheets_dir()?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("{}.json", id));
+    let json = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
+    fs::write(path, json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn load_sheet(id: String) -> Result<Option<serde_json::Value>, String> {
+    let path = sheets_dir()?.join(format!("{}.json", id));
+    if !path.exists() {
+        return Ok(None);
+    }
+    let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+    Ok(Some(value))
+}
+
+#[tauri::command]
+fn list_sheets() -> Result<Vec<serde_json::Value>, String> {
+    let dir = sheets_dir()?;
+    if !dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut sheets = vec![];
+    for entry in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+        let path = entry.map_err(|e| e.to_string())?.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        match serde_json::from_str::<serde_json::Value>(&content) {
+            Ok(v) => sheets.push(v),
+            Err(_) => continue,
+        }
+    }
+    Ok(sheets)
+}
+
+#[tauri::command]
+fn delete_sheet(id: String) -> Result<(), String> {
+    let path = sheets_dir()?.join(format!("{}.json", id));
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -412,7 +472,8 @@ pub fn run() {
             save_campaign, list_campaigns, delete_campaign,
             save_character, list_characters, delete_character,
             save_class, list_classes, delete_class,
-            save_ruleset, list_rulesets, delete_ruleset
+            save_ruleset, list_rulesets, delete_ruleset,
+            save_sheet, load_sheet, list_sheets, delete_sheet
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

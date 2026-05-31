@@ -1,103 +1,86 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Save } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import toast from "react-hot-toast";
-import type { LayoutNode, NodeType } from "./types";
-import {
-  createSectionNode,
-  createRowNode,
-  createColumnNode,
-  addChild,
-  removeNode,
-  updateNodeSettings,
-  findNode,
-  moveNode,
-  moveSibling,
-  getSiblingPosition,
-} from "./types";
-import { HierarchyTree } from "./components/HierarchyTree";
-import { SheetPreview } from "./components/SheetPreview";
-import { SettingsPanel } from "./components/SettingsPanel";
+import Modal from "../../components/ui/modal/Modal";
+import type { LayoutNode } from "./types";
+import { FormEditor } from "./components/FormEditor";
+import { sectionNode } from "./components/nodes/section";
+import { imageNode } from "./components/nodes/image";
+import { textInputNode } from "./components/nodes/text-input";
+import { levelCountNode } from "./components/nodes/level-count";
+import { classSelectorNode } from "./components/nodes/class-selector";
+import { gridNode } from "./components/nodes/grid";
+import { autoStatsNode } from "./components/nodes/auto-stats";
+import { autoSkillsNode } from "./components/nodes/auto-skills";
+import { autoSavingThrowsNode } from "./components/nodes/auto-saving-throws";
+import { proficiencyBonusNode } from "./components/nodes/proficiency-bonus";
+
+const SHEET_ID = "default";
+
+const nodeTypes = { ...sectionNode, ...imageNode, ...textInputNode, ...levelCountNode, ...classSelectorNode, ...gridNode, ...autoStatsNode, ...autoSkillsNode, ...autoSavingThrowsNode, ...proficiencyBonusNode };
+
+interface SheetData {
+  id: string;
+  name: string;
+  nodes: LayoutNode[];
+}
 
 export default function SheetEditor() {
   const navigate = useNavigate();
   const [nodes, setNodes] = useState<LayoutNode[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sheetName, setSheetName] = useState("My Sheet");
+  const [loaded, setLoaded] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const savedSnapshot = useRef<string>("");
 
-  const selectedNode = selectedId ? findNode(nodes, selectedId) ?? null : null;
+  useEffect(() => {
+    invoke<SheetData | null>("load_sheet", { id: SHEET_ID })
+      .then((data) => {
+        if (data) {
+          setNodes(data.nodes ?? []);
+          setSheetName(data.name ?? "My Sheet");
+          savedSnapshot.current = JSON.stringify(data.nodes ?? []);
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
 
-  // ── Tree operations ──────────────────────────────────────────────────────
-  const handleAddChild = useCallback(
-    (parentId: string | null, type: NodeType) => {
-      const newNode =
-        type === "section"
-          ? createSectionNode()
-          : type === "row"
-            ? createRowNode()
-            : createColumnNode();
-
-      if (parentId) {
-        setNodes((prev) => addChild(prev, parentId, newNode));
-      } else {
-        setNodes((prev) => [...prev, newNode]);
-      }
-      setSelectedId(newNode.id);
-    },
-    [],
-  );
-
-  const handleDelete = useCallback(
-    (id: string) => {
-      setNodes((prev) => removeNode(prev, id));
-      setSelectedId((prev) => (prev === id ? null : prev));
-    },
-    [],
-  );
-
-  const handleSettingsChange = useCallback(
-    (patch: Record<string, unknown>) => {
-      if (!selectedId) return;
-      setNodes((prev) => updateNodeSettings(prev, selectedId, patch));
-    },
-    [selectedId],
-  );
-
-  const handleMoveUp = useCallback(
-    (id: string) => setNodes((prev) => moveSibling(prev, id, "up")),
-    [],
-  );
-
-  const handleMoveDown = useCallback(
-    (id: string) => setNodes((prev) => moveSibling(prev, id, "down")),
-    [],
-  );
-
-  const handleMove = useCallback(
-    (dragId: string, targetId: string, position: "before" | "after" | "inside") => {
-      setNodes((prev) => moveNode(prev, dragId, targetId, position));
-    },
-    [],
-  );
-
-  const canMoveUp = useCallback(
-    (id: string) => {
-      const pos = getSiblingPosition(nodes, id);
-      return pos ? !pos.isFirst : false;
-    },
-    [nodes],
-  );
-
-  const canMoveDown = useCallback(
-    (id: string) => {
-      const pos = getSiblingPosition(nodes, id);
-      return pos ? !pos.isLast : false;
-    },
-    [nodes],
-  );
+  useEffect(() => {
+    if (loaded) {
+      setDirty(JSON.stringify(nodes) !== savedSnapshot.current);
+    }
+  }, [nodes, loaded]);
 
   const handleSave = () => {
-    toast.success("Sheet saved!");
+    const data: SheetData = { id: SHEET_ID, name: sheetName, nodes };
+    invoke("save_sheet", { id: SHEET_ID, data })
+      .then(() => {
+        savedSnapshot.current = JSON.stringify(nodes);
+        setDirty(false);
+        toast.success("Sheet saved!");
+      })
+      .catch(() => toast.error("Failed to save sheet"));
   };
+
+  const handleBack = () => {
+    if (dirty) {
+      setShowUnsavedModal(true);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  if (!loaded) {
+    return (
+      <main className="h-screen flex items-center justify-center bg-base">
+        <span className="text-gold-600 text-xs">Loading...</span>
+      </main>
+    );
+  }
 
   return (
     <main className="h-screen flex flex-col bg-base overflow-hidden">
@@ -105,7 +88,7 @@ export default function SheetEditor() {
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gold-500/20 shrink-0">
         <button
           className="w-9! h-9! flex items-center justify-center"
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -120,40 +103,47 @@ export default function SheetEditor() {
           Save
         </button>
       </div>
+      <FormEditor
+        nodes={nodes}
+        onChange={setNodes}
+        nodeTypes={nodeTypes}
+      />
 
-      {/* ── Body: 3-panel layout ───────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* Left — hierarchy tree */}
-        <aside className="w-60 shrink-0 bg-surface border-r border-gold-500/20 overflow-hidden flex flex-col">
-          <HierarchyTree
-            nodes={nodes}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onAddChild={handleAddChild}
-            onDelete={handleDelete}
-            onMove={handleMove}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
-            canMoveUp={canMoveUp}
-            canMoveDown={canMoveDown}
-          />
-        </aside>
-
-        {/* Center — live visual preview */}
-        <SheetPreview
-          nodes={nodes}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
-
-        {/* Right — settings inspector */}
-        <aside className="w-64 shrink-0 bg-surface border-l border-gold-500/20 overflow-hidden flex flex-col">
-          <SettingsPanel
-            node={selectedNode}
-            onChange={handleSettingsChange}
-          />
-        </aside>
-      </div>
+      {/* Unsaved changes modal */}
+      <Modal isOpen={showUnsavedModal} onClose={() => setShowUnsavedModal(false)}>
+        <div className="bg-surface border border-gold-500/20 rounded-xl p-6 flex flex-col gap-4 min-w-[320px]">
+          <h2 className="text-gold-300 font-semibold text-sm">Unsaved Changes</h2>
+          <p className="text-gold-600 text-xs">You have unsaved changes. Do you want to save before leaving?</p>
+          <div className="flex gap-2 justify-end mt-2">
+            <button
+              type="button"
+              className="px-3! py-1.5! text-xs! border-gold-500/30! text-gold-500! hover:bg-gold-500/10!"
+              onClick={() => {
+                setShowUnsavedModal(false);
+                navigate(-1);
+              }}
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              className="px-3! py-1.5! text-xs! bg-gold-500! text-gray-900! border-gold-500! hover:bg-gold-400!"
+              onClick={() => {
+                const data: SheetData = { id: SHEET_ID, name: sheetName, nodes };
+                invoke("save_sheet", { id: SHEET_ID, data })
+                  .then(() => {
+                    toast.success("Sheet saved!");
+                    navigate(-1);
+                  })
+                  .catch(() => toast.error("Failed to save sheet"));
+                setShowUnsavedModal(false);
+              }}
+            >
+              Save & Leave
+            </button>
+          </div>
+        </div>
+      </Modal>
     </main>
   );
 }

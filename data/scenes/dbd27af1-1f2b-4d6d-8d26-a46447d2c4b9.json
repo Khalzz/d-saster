@@ -1,9 +1,9 @@
 {
   "id": "dbd27af1-1f2b-4d6d-8d26-a46447d2c4b9",
   "name": "Castle",
-  "gridType": "none",
-  "cols": 1,
-  "rows": 1,
+  "gridType": "square",
+  "cols": 35,
+  "rows": 40,
   "disabledCells": [
     "29,6",
     "29,7",
@@ -25,7 +25,7 @@
     "w": 3700.0,
     "h": 4200.0
   },
-  "cellSize": 50,
-  "lastEdited": "2026-05-25T18:53:48.163Z",
+  "cellSize": 53,
+  "lastEdited": "2026-05-31T01:02:38.115Z",
   "lastEditor": "DM"
 }

@@ -1,0 +1,262 @@
+{
+  "id": "default",
+  "name": "My Sheet",
+  "nodes": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [],
+              "id": "01548911-98ff-409f-98e9-9ba0656d5b2f",
+              "settings": {
+                "alt": "",
+                "gap": 0,
+                "height": 0,
+                "objectFit": "cover",
+                "padding": 0,
+                "squared": true,
+                "src": "",
+                "width": 35
+              },
+              "type": "image"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "808f18ef-9d87-4147-880f-a3965eeb5349",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Name",
+                        "padding": 0,
+                        "placeholder": ""
+                      },
+                      "type": "text-input"
+                    },
+                    {
+                      "children": [],
+                      "id": "8343f558-7d18-4513-905a-a3e43831ab06",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Level",
+                        "max": 20,
+                        "min": 0,
+                        "padding": 0
+                      },
+                      "type": "level-count"
+                    }
+                  ],
+                  "id": "fe8ddbd0-2c00-47d4-97b6-d416ae5fc90a",
+                  "settings": {
+                    "direction": "horizontal",
+                    "gap": 8,
+                    "padding": 0,
+                    "title": "Container",
+                    "width": 0
+                  },
+                  "type": "container"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "6116e591-4900-49ba-a134-49c6e17b8d68",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Race",
+                        "padding": 0,
+                        "placeholder": ""
+                      },
+                      "type": "text-input"
+                    },
+                    {
+                      "children": [],
+                      "id": "503935c6-f13e-406a-851d-c452284f0512",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Origin",
+                        "padding": 0,
+                        "placeholder": ""
+                      },
+                      "type": "text-input"
+                    }
+                  ],
+                  "id": "619b245c-5f40-4a5b-80e2-a413bf66612b",
+                  "settings": {
+                    "direction": "horizontal",
+                    "gap": 8,
+                    "padding": 0,
+                    "title": "Container",
+                    "width": 0
+                  },
+                  "type": "container"
+                },
+                {
+                  "children": [],
+                  "id": "ad46c30b-0450-4938-be6a-29885dbd4fd2",
+                  "settings": {
+                    "allowMulticlass": false,
+                    "gap": 0,
+                    "label": "Class",
+                    "padding": 0
+                  },
+                  "type": "class-selector"
+                }
+              ],
+              "id": "9bebf3e8-25b8-4be5-a5d9-78a235c80ec3",
+              "settings": {
+                "gap": 8,
+                "padding": 8,
+                "title": "Character Settings"
+              },
+              "type": "section"
+            }
+          ],
+          "id": "81ed88ca-f894-496b-817d-5847eba00540",
+          "settings": {
+            "direction": "horizontal",
+            "gap": 10,
+            "padding": 0,
+            "title": "Character settings",
+            "width": 0
+          },
+          "type": "container"
+        },
+        {
+          "children": [
+            {
+              "children": [],
+              "id": "c83a973d-d448-4ab1-bd59-c7eebdfc30d8",
+              "settings": {
+                "columns": 6,
+                "gap": 8,
+                "padding": 0,
+                "statKeys": [],
+                "width": 0
+              },
+              "type": "auto-stats"
+            }
+          ],
+          "id": "f9a2c74c-16ec-4384-9937-c743d30dd791",
+          "settings": {
+            "gap": 8,
+            "padding": 8,
+            "title": "Stats"
+          },
+          "type": "section"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [],
+                  "id": "9dcb0381-6f75-4ac2-9dad-3d56bbe44f0d",
+                  "settings": {
+                    "formula": "Math.floor(({{level}} - 1) / 4) + 2",
+                    "gap": 0,
+                    "padding": 0,
+                    "width": 0
+                  },
+                  "type": "proficiency-bonus"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "36adf72a-6075-496f-a9f5-5245ee10f75c",
+                      "settings": {
+                        "columns": 2,
+                        "gap": 5,
+                        "padding": 0
+                      },
+                      "type": "auto-skills"
+                    }
+                  ],
+                  "id": "32717a86-e36e-429e-8a33-fa537f1be17a",
+                  "settings": {
+                    "description": "Skills represent **specific areas of expertise a character can train in**. Each skill is tied to one of the six ability scores (STR, DEX, CON, INT, WIS, CHA).\n\nThey are used to check how good a character did something, based on what skill correlates to the action he will perform.\n\n*The calculation of skills modifier its:*\n**(Stat mod)** + **(proficiency bonus if profficient)**",
+                    "gap": 8,
+                    "grow": true,
+                    "padding": 8,
+                    "title": "Skills",
+                    "width": 0
+                  },
+                  "type": "section"
+                }
+              ],
+              "id": "bb9f075d-2525-4142-89df-e3d40f2986ff",
+              "settings": {
+                "direction": "vertical",
+                "gap": 10,
+                "padding": 0,
+                "title": "Container",
+                "width": 44
+              },
+              "type": "container"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "184fd273-d3a8-4fd3-a496-22ddfeb22603",
+                      "settings": {
+                        "columns": 6,
+                        "formula": "",
+                        "gap": 4,
+                        "padding": 0
+                      },
+                      "type": "auto-saving-throws"
+                    }
+                  ],
+                  "id": "434380cd-f499-4a07-848a-94757dccc9e8",
+                  "settings": {
+                    "description": "Saving throws represent a **character's ability to resist or avoid harmful effects**. Each saving throw is tied to one of the six ability scores (STR, DEX, CON, INT, WIS, CHA).\n\nThey are used to **determine if a character can withstand something happening to them** — spells, traps, poison, fear, or any forced effect.\n\n*The calculation of saving throw modifier is:*\n**(Stat mod)** + **(proficiency bonus if proficient)**",
+                    "gap": 8,
+                    "grow": false,
+                    "padding": 8,
+                    "title": "Saving throws",
+                    "width": 0
+                  },
+                  "type": "section"
+                }
+              ],
+              "id": "84774db3-c5ce-4d65-a9fd-fc22af06da51",
+              "settings": {
+                "direction": "vertical",
+                "gap": 10,
+                "padding": 0,
+                "title": "Container",
+                "width": 0
+              },
+              "type": "container"
+            }
+          ],
+          "id": "c254a6b4-c9f9-48ff-952b-b12ac842a999",
+          "settings": {
+            "direction": "horizontal",
+            "gap": 10,
+            "padding": 0,
+            "title": "Container",
+            "width": 0
+          },
+          "type": "container"
+        }
+      ],
+      "id": "c8eb3a0e-6033-4be9-9f48-9c48b6a03f47",
+      "settings": {
+        "direction": "vertical",
+        "gap": 10,
+        "padding": 0,
+        "title": "Container",
+        "width": 0
+      },
+      "type": "container"
+    }
+  ]
+}
