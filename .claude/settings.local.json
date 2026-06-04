@@ -22,7 +22,11 @@
       "Read(//c/Users/Khals/AppData/Local/pnpm/store/v10/**)",
       "Bash(pnpm store *)",
       "Bash(pnpm --version)",
-      "Bash(Get-Content \"C:\\\\Users\\\\Khals\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Khals-OneDrive-Desktop-d-saster\\\\16a64e0c-c059-4b8d-abda-edd75eea96d6\\\\tasks\\\\ba0o7xtle.output\" -Wait -Tail 20)"
+      "Bash(Get-Content \"C:\\\\Users\\\\Khals\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Khals-OneDrive-Desktop-d-saster\\\\16a64e0c-c059-4b8d-abda-edd75eea96d6\\\\tasks\\\\ba0o7xtle.output\" -Wait -Tail 20)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Khals\\\\OneDrive\\\\Desktop\\\\d-saster\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(head -100)",
+      "Bash(npx tsc *)"
     ]
   }
 }

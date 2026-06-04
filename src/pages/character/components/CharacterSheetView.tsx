@@ -2,10 +2,12 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Minus, Plus, Star, ChevronDown, UserRound, ImagePlus, X, CircleHelp } from "lucide-react";
 import Tooltip from "../../../components/ui/tooltip/Tooltip";
-import type { LayoutNode, SectionSettings, ContainerSettings, ImageSettings, TextInputSettings, LevelCountSettings, ClassSelectorSettings, GridSettings, AutoStatsSettings, AutoSkillsSettings, AutoSavingThrowsSettings, ProficiencyBonusSettings } from "../../sheet-editor/types";
+import type { LayoutNode, SectionSettings, ContainerSettings, ImageSettings, TextInputSettings, LevelCountSettings, CounterSettings, StaticCounterSettings, ClassSelectorSettings, GridSettings, AutoStatsSettings, AutoSkillsSettings, AutoSavingThrowsSettings, ProficiencyBonusSettings } from "../../sheet-editor/types";
 import type { Ruleset, StatDefinition, RulesetSkill } from "../../ruleset/ruleset-editor";
 import type { Character, CharacterClass } from "../character-editor";
 import { calcModifier } from "./StatCell";
+import { labelToVar, resolveHandlebars } from "../../sheet-editor/handlebars";
+import { StaticCounterBox } from "../../sheet-editor/components/nodes/counter/StaticCounterBox";
 import { useRef } from "react";
 
 // ── Context for character data ─────────────────────────────────────────────
@@ -17,6 +19,7 @@ interface CharacterSheetContext {
   skills: RulesetSkill[];
   classes: CharacterClass[];
   onClassCreated?: (cls: CharacterClass) => void;
+  vars: Record<string, string | number>;
 }
 
 const SheetCtx = createContext<CharacterSheetContext>(null!);
@@ -46,7 +49,27 @@ export function CharacterSheetView({ char, onChange, ruleset, statDefs, skills, 
       .catch(() => {});
   }, []);
 
-  const ctx: CharacterSheetContext = { char, onChange, ruleset, statDefs, skills, classes, onClassCreated };
+  const vars: Record<string, string | number> = {
+    level: char.level,
+    proficiency_bonus: char.proficiencyBonus,
+    inspiration: char.inspiration,
+    armor_class: char.armorClass,
+    speed: char.speed,
+    initiative: char.initiative,
+    name: char.name,
+    race: char.race,
+    origin: char.origin,
+    description: char.description,
+    ...Object.fromEntries(
+      Object.entries(char.stats ?? {}).flatMap(([k, v]) => [
+        [`stat.${k}.points`, v],
+        [`stat.${k}.mod`, parseInt(calcModifier(v, ruleset?.modifierFormula)) || 0],
+      ])
+    ),
+    ...char.customFields,
+  };
+
+  const ctx: CharacterSheetContext = { char, onChange, ruleset, statDefs, skills, classes, onClassCreated, vars };
 
   if (nodes.length === 0) {
     return (
@@ -77,6 +100,8 @@ function InteractiveNode({ node }: { node: LayoutNode }) {
     case "image": return <ImageNode node={node} />;
     case "text-input": return <TextInputNode node={node} />;
     case "level-count": return <LevelCountNode node={node} />;
+    case "counter": return <CounterNode node={node} />;
+    case "static-counter": return <StaticCounterNode node={node} />;
     case "class-selector": return <ClassSelectorNode node={node} />;
     case "grid": return <GridNode node={node} />;
     case "auto-stats": return <AutoStatsNode node={node} />;
@@ -89,7 +114,9 @@ function InteractiveNode({ node }: { node: LayoutNode }) {
 
 // ── Section ────────────────────────────────────────────────────────────────
 function SectionNode({ node }: { node: LayoutNode }) {
-  const { title, padding, gap, width, description } = node.settings as SectionSettings;
+  const { title, padding, gap, width, description, direction = "column" } = node.settings as SectionSettings;
+  const { vars } = useSheet();
+  const resolvedDescription = description ? resolveHandlebars(description, vars) : "";
   return (
     <div
       className="relative rounded-md border border-gold-500/30"
@@ -97,13 +124,13 @@ function SectionNode({ node }: { node: LayoutNode }) {
     >
       <span className="absolute top-0 left-3 h-2 flex items-center -translate-y-1/2 px-1.5 bg-surface text-[10px] font-semibold uppercase tracking-widest text-gold-500/50 select-none gap-1">
         {title || "Section"}
-        {description && (
-          <Tooltip text={description}>
+        {resolvedDescription && (
+          <Tooltip text={resolvedDescription}>
             <CircleHelp className="h-3 w-3 text-gold-600 hover:text-gold-400 transition-colors" />
           </Tooltip>
         )}
       </span>
-      <div className="flex flex-col" style={{ gap }}>
+      <div className={`flex ${direction === "row" ? "flex-row flex-wrap" : "flex-col"}`} style={{ gap }}>
         {node.children.map((child) => (
           <InteractiveNode key={child.id} node={child} />
         ))}
@@ -196,9 +223,20 @@ function TextInputNode({ node }: { node: LayoutNode }) {
   const { label, placeholder, padding } = node.settings as TextInputSettings;
   const { char, onChange } = useSheet();
 
-  // Map label to character field
-  const fieldKey = mapLabelToField(label);
-  const value = fieldKey ? (char as unknown as Record<string, unknown>)[fieldKey] as string ?? "" : "";
+  const fixedKey = mapLabelToField(label);
+  const customKey = labelToVar(label);
+
+  const value = fixedKey
+    ? (char as unknown as Record<string, unknown>)[fixedKey] as string ?? ""
+    : char.customFields?.[customKey] as string ?? "";
+
+  const handleChange = (v: string) => {
+    if (fixedKey) {
+      onChange({ [fixedKey]: v });
+    } else if (customKey) {
+      onChange({ customFields: { ...char.customFields, [customKey]: v } });
+    }
+  };
 
   return (
     <div className="w-full" style={{ padding }}>
@@ -210,7 +248,7 @@ function TextInputNode({ node }: { node: LayoutNode }) {
           className="field-input h-10 py-1"
           placeholder={placeholder || "Text input"}
           value={value}
-          onChange={(e) => { if (fieldKey) onChange({ [fieldKey]: e.target.value }); }}
+          onChange={(e) => handleChange(e.target.value)}
         />
       </div>
     </div>
@@ -277,6 +315,98 @@ function LevelCountNode({ node }: { node: LayoutNode }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Counter ────────────────────────────────────────────────────────────────
+function CounterNode({ node }: { node: LayoutNode }) {
+  const { label, max, hasMax, allowNegative, isStatic, staticValue, padding } = node.settings as CounterSettings;
+  const { char, onChange, vars } = useSheet();
+
+  const key = labelToVar(label);
+  const value = typeof char.customFields?.[key] === "number"
+    ? char.customFields[key] as number
+    : 0;
+
+  const clamp = (v: number) => {
+    if (!allowNegative && v < 0) v = 0;
+    if (hasMax && v > max) v = max;
+    return v;
+  };
+
+  const set = (v: number) => {
+    onChange({ customFields: { ...char.customFields, [key]: clamp(v) } });
+  };
+
+  if (isStatic) {
+    const { shieldView = false, width = 0, height = 0 } = node.settings as CounterSettings;
+    const resolved = (() => {
+      const r = resolveHandlebars(staticValue || "0", vars);
+      try { return String(Function(`"use strict"; return (${r})`)()) } catch { return r; }
+    })();
+    return (
+      <StaticCounterBox label={label} shieldView={shieldView} width={width} height={height} padding={padding}>
+        <span className="text-xl font-light leading-tight text-gold-300 text-center mb-2">{resolved}</span>
+      </StaticCounterBox>
+    );
+  }
+
+  return (
+    <div className="w-fit" style={{ padding }}>
+      <div className="flex flex-col shrink-0">
+        <label className="text-gold-600 text-[10px] font-semibold uppercase tracking-wider">
+          {label || "Counter"}
+          {hasMax && (
+            <span className="text-gold-700 text-[9px] font-normal normal-case tracking-normal"> ({max} max)</span>
+          )}
+        </label>
+        <div className="flex w-fit rounded-lg overflow-hidden border border-gold-500/20 h-10">
+          <button
+            type="button"
+            className="w-6! min-w-0! h-full! border-0! rounded-none! bg-transparent! text-gold-500! hover:bg-gold-500/10! flex items-center justify-center shrink-0"
+            onClick={() => set(value - 1)}
+          >
+            <Minus className="h-3 w-3" />
+          </button>
+          <div className="w-px bg-gold-500/20 shrink-0" />
+          <input
+            type="number"
+            className="w-10 h-full text-sm font-light text-gold-300 text-center bg-base outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            value={value}
+            onChange={(e) => set(parseInt(e.target.value) || 0)}
+          />
+          <div className="w-px bg-gold-500/20 shrink-0" />
+          <button
+            type="button"
+            className="w-6! min-w-0! h-full! border-0! rounded-none! bg-transparent! text-gold-500! hover:bg-gold-500/10! flex items-center justify-center shrink-0"
+            onClick={() => set(value + 1)}
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Static Counter ─────────────────────────────────────────────────────────
+function StaticCounterNode({ node }: { node: LayoutNode }) {
+  const { label, value, direction = "vertical", shieldView = false, width = 0, height = 0, padding = 0 } = node.settings as StaticCounterSettings;
+  const { vars } = useSheet();
+
+  const resolve = (formula: string) => {
+    const r = resolveHandlebars(formula || "0", vars);
+    try { return String(Function(`"use strict"; return (${r})`)()) } catch { return r; }
+  };
+
+  const valueClass = direction === "horizontal"
+    ? "text-sm font-bold text-gold-300"
+    : "text-xl font-light leading-tight text-gold-300 text-center mb-2";
+
+  return (
+    <StaticCounterBox label={resolve(label)} direction={direction} shieldView={shieldView} width={width} height={height} padding={padding}>
+      <span className={valueClass}>{resolve(value)}</span>
+    </StaticCounterBox>
   );
 }
 
@@ -516,7 +646,7 @@ function AutoStatCell({ def, char, onChange, formula }: { def: StatDefinition; c
 // ── Auto Skills ────────────────────────────────────────────────────────────
 function AutoSkillsNode({ node }: { node: LayoutNode }) {
   const { columns, padding, gap, width } = node.settings as AutoSkillsSettings;
-  const { char, onChange, skills, statDefs, ruleset } = useSheet();
+  const { char, onChange, skills, statDefs, ruleset, vars } = useSheet();
 
   const evalSkillMod = (skill: RulesetSkill) => {
     const statVal = char.stats[skill.statKey] ?? 10;
@@ -526,11 +656,12 @@ function AutoSkillsNode({ node }: { node: LayoutNode }) {
 
     if (ruleset?.skillFormula) {
       try {
-        const expr = ruleset.skillFormula
-          .replace(/\{\{stat_mod\}\}/g, String(mod))
-          .replace(/\{\{proficiency_bonus\}\}/g, String(bonus))
-          .replace(/\{\{level\}\}/g, String(char.level))
-          .replace(/\{\{inspiration\}\}/g, String(char.inspiration));
+        const expr = resolveHandlebars(ruleset.skillFormula, {
+          ...vars,
+          stat_mod: mod,
+          stat_points: statVal,
+          proficiency_bonus: bonus,
+        });
         // eslint-disable-next-line no-new-func
         const result = Math.floor(new Function(`return (${expr})`)() as number);
         return result >= 0 ? `+${result}` : `${result}`;
@@ -579,7 +710,7 @@ function AutoSkillsNode({ node }: { node: LayoutNode }) {
 // ── Auto Saving Throws ─────────────────────────────────────────────────────
 function AutoSavingThrowsNode({ node }: { node: LayoutNode }) {
   const { columns, padding, gap, formula, width } = node.settings as AutoSavingThrowsSettings;
-  const { char, onChange, ruleset, statDefs } = useSheet();
+  const { char, onChange, ruleset, statDefs, vars } = useSheet();
   const tree = useTree();
 
   // Collect stat keys from auto-stats nodes on the tree
@@ -610,12 +741,12 @@ function AutoSavingThrowsNode({ node }: { node: LayoutNode }) {
     const f = formula || "{{stat_mod}} + {{proficiency_bonus}}";
 
     try {
-      const expr = f
-        .replace(/\{\{stat_mod\}\}/g, String(mod))
-        .replace(/\{\{stat_points\}\}/g, String(statVal))
-        .replace(/\{\{proficiency_bonus\}\}/g, String(profBonus))
-        .replace(/\{\{level\}\}/g, String(char.level))
-        .replace(/\{\{inspiration\}\}/g, String(char.inspiration));
+      const expr = resolveHandlebars(f, {
+        ...vars,
+        stat_mod: mod,
+        stat_points: statVal,
+        proficiency_bonus: profBonus,
+      });
       // eslint-disable-next-line no-new-func
       const result = Math.floor(new Function(`return (${expr})`)() as number);
       return result >= 0 ? `+${result}` : `${result}`;
@@ -663,17 +794,15 @@ function AutoSavingThrowsNode({ node }: { node: LayoutNode }) {
 // ── Proficiency Bonus ──────────────────────────────────────────────────────
 function ProficiencyBonusNode({ node }: { node: LayoutNode }) {
   const { formula, width, padding } = node.settings as ProficiencyBonusSettings;
-  const { char } = useSheet();
+  const { char, vars } = useSheet();
 
   const value = useMemo(() => {
     const defaultFormula = "Math.floor(({{level}} - 1) / 4) + 2";
     const f = formula || defaultFormula;
-    const expr = f
-      .replace(/\{\{level\}\}/g, String(char.level))
-      .replace(/\{\{proficiency_bonus\}\}/g, String(char.proficiencyBonus));
+    const expr = resolveHandlebars(f, vars);
     try { return Math.floor(Function(`"use strict"; return (${expr})`)()) }
     catch { return char.proficiencyBonus }
-  }, [formula, char.level, char.proficiencyBonus]);
+  }, [formula, vars, char.proficiencyBonus]);
 
   return (
     <div style={{ padding, ...(width > 0 ? { width: `${width}%` } : { width: "100%" }) }}>

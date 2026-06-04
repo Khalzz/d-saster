@@ -10,19 +10,19 @@
   "type": "player",
   "stats": {
     "charisma": 10,
-    "intelligence": 13,
-    "dex": 15,
     "constitution": 12,
+    "dex": 15,
+    "intelligence": 13,
     "str": 14,
     "wisdom": 8
   },
   "savingThrows": {},
   "skillProficiencies": {
-    "e7e071d4-de66-4b43-a6f3-028aaf9233a4": false,
     "5dd77713-275c-4a97-b22e-147f178bd592": false,
-    "bcf2ff4a-7c0b-4b86-8c08-76e0055bc03f": true,
+    "b96644c4-22d8-4ccf-b2a3-b2fd97475bf7": false,
     "e3655bb1-2a98-43aa-8f07-8777e82da89a": false,
-    "b96644c4-22d8-4ccf-b2a3-b2fd97475bf7": false
+    "e7e071d4-de66-4b43-a6f3-028aaf9233a4": false,
+    "bcf2ff4a-7c0b-4b86-8c08-76e0055bc03f": true
   },
   "inspiration": 0,
   "proficiencyBonus": 2,

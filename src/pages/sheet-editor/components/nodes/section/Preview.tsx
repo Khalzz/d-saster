@@ -4,7 +4,7 @@ import type { SectionSettings } from "../../../types";
 import type { NodePreviewProps } from "../types";
 
 export function SectionPreview({ node, selectedIds, onSelect, renderChildren }: NodePreviewProps) {
-  const { title, padding, gap, width, description } = node.settings as SectionSettings;
+  const { title, padding, gap, width, description, direction = "column" } = node.settings as SectionSettings;
   const isSelected = selectedIds.has(node.id);
 
   return (
@@ -28,7 +28,7 @@ export function SectionPreview({ node, selectedIds, onSelect, renderChildren }: 
           </Tooltip>
         )}
       </span>
-      <div className="flex flex-col" style={{ gap }}>
+      <div className={`flex ${direction === "row" ? "flex-row flex-wrap" : "flex-col"}`} style={{ gap }}>
         {node.children.length === 0 ? (
           <EmptySlot label="Empty section" />
         ) : (

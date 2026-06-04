@@ -1,13 +1,14 @@
-import type { LayoutNode, NodeTypeConfig } from "../types";
+import type { LayoutNode, NodeTypeConfig, VarDef } from "../types";
 
 interface SettingsPanelProps {
   node: LayoutNode | null;
   selectedCount: number;
   onChange: (patch: Record<string, unknown>) => void;
   nodeTypes: Record<string, NodeTypeConfig>;
+  availableVars?: VarDef[];
 }
 
-export function SettingsPanel({ node, selectedCount, onChange, nodeTypes }: SettingsPanelProps) {
+export function SettingsPanel({ node, selectedCount, onChange, nodeTypes, availableVars }: SettingsPanelProps) {
   const config = node ? nodeTypes[node.type] : null;
 
   return (
@@ -37,6 +38,7 @@ export function SettingsPanel({ node, selectedCount, onChange, nodeTypes }: Sett
           <config.Settings
             settings={node.settings as unknown as Record<string, unknown>}
             onChange={onChange}
+            availableVars={availableVars}
           />
         )}
       </div>

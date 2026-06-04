@@ -15,7 +15,7 @@ const FORMULA_TOOLTIP = `Math expression for each saving throw value. Type \`{{\
 - \`{{proficiency_bonus}}\` — Proficiency bonus
 - \`{{inspiration}}\` — Inspiration value`;
 
-export function AutoSavingThrowsSettingsForm({ settings, onChange }: NodeSettingsProps) {
+export function AutoSavingThrowsSettingsForm({ settings, onChange, availableVars }: NodeSettingsProps) {
   const s = settings as unknown as AutoSavingThrowsSettings;
 
   return (
@@ -34,6 +34,7 @@ export function AutoSavingThrowsSettingsForm({ settings, onChange }: NodeSetting
             onChange={(v) => onChange({ formula: v })}
             placeholder="{{stat_mod}} + {{proficiency_bonus}}"
             defaultFormula="{{stat_mod}} + {{proficiency_bonus}}"
+            extraVars={availableVars}
           />
         </Field>
       </div>

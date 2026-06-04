@@ -10,6 +10,8 @@ import { sectionNode } from "./components/nodes/section";
 import { imageNode } from "./components/nodes/image";
 import { textInputNode } from "./components/nodes/text-input";
 import { levelCountNode } from "./components/nodes/level-count";
+import { counterNode } from "./components/nodes/counter";
+import { staticCounterNode } from "./components/nodes/static-counter";
 import { classSelectorNode } from "./components/nodes/class-selector";
 import { gridNode } from "./components/nodes/grid";
 import { autoStatsNode } from "./components/nodes/auto-stats";
@@ -19,7 +21,7 @@ import { proficiencyBonusNode } from "./components/nodes/proficiency-bonus";
 
 const SHEET_ID = "default";
 
-const nodeTypes = { ...sectionNode, ...imageNode, ...textInputNode, ...levelCountNode, ...classSelectorNode, ...gridNode, ...autoStatsNode, ...autoSkillsNode, ...autoSavingThrowsNode, ...proficiencyBonusNode };
+const nodeTypes = { ...sectionNode, ...imageNode, ...textInputNode, ...levelCountNode, ...counterNode, ...staticCounterNode, ...classSelectorNode, ...gridNode, ...autoStatsNode, ...autoSkillsNode, ...autoSavingThrowsNode, ...proficiencyBonusNode };
 
 interface SheetData {
   id: string;

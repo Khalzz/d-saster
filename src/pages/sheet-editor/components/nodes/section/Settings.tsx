@@ -1,9 +1,10 @@
 import Field from "../../../../../components/ui/Field";
 import { NumberField } from "../shared";
+import { HandlebarTextarea } from "../HandlebarInput";
 import type { SectionSettings } from "../../../types";
 import type { NodeSettingsProps } from "../types";
 
-export function SectionSettingsForm({ settings, onChange }: NodeSettingsProps) {
+export function SectionSettingsForm({ settings, onChange, availableVars }: NodeSettingsProps) {
   const s = settings as unknown as SectionSettings;
 
   return (
@@ -17,6 +18,25 @@ export function SectionSettingsForm({ settings, onChange }: NodeSettingsProps) {
           className="bg-base border border-gold-500/30 rounded-md px-2 py-1.5 text-xs text-gold-500 w-full caret-gold-500 focus:ring-0 focus:border-gold-500! outline-none"
         />
       </Field>
+      <div className="mt-3 mb-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-gold-600">Direction</span>
+        <div className="flex gap-1 mt-1">
+          {(["column", "row"] as const).map((d) => (
+            <button
+              key={d}
+              type="button"
+              className={`flex-1 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-md border transition-colors ${
+                (s.direction ?? "column") === d
+                  ? "border-gold-500 text-gold-400 bg-gold-500/10"
+                  : "border-gold-500/20 text-gold-600 hover:border-gold-500/40"
+              }`}
+              onClick={() => onChange({ direction: d })}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-3 mt-3">
         <NumberField
           label="Padding"
@@ -51,12 +71,11 @@ export function SectionSettingsForm({ settings, onChange }: NodeSettingsProps) {
       </div>
       <div className="mt-3">
         <Field label="Description">
-          <textarea
-            className="w-full rounded-md px-2.5 py-2 border border-gold-500/20 bg-base text-gold-200 text-xs resize-y outline-none focus:border-gold-500/40 transition-colors placeholder:text-gold-700"
-            rows={3}
-            placeholder="Tooltip text shown on hover…"
+          <HandlebarTextarea
             value={s.description ?? ""}
-            onChange={(e) => onChange({ description: e.target.value })}
+            onChange={(v) => onChange({ description: v })}
+            placeholder="Tooltip text shown on hover…"
+            extraVars={availableVars}
           />
         </Field>
       </div>

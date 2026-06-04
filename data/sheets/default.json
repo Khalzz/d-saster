@@ -38,15 +38,16 @@
                     },
                     {
                       "children": [],
-                      "id": "8343f558-7d18-4513-905a-a3e43831ab06",
+                      "id": "4377add4-4562-4037-8b4f-42be5cfb82de",
                       "settings": {
+                        "allowNegative": false,
                         "gap": 0,
+                        "hasMax": true,
                         "label": "Level",
                         "max": 20,
-                        "min": 0,
                         "padding": 0
                       },
-                      "type": "level-count"
+                      "type": "counter"
                     }
                   ],
                   "id": "fe8ddbd0-2c00-47d4-97b6-d416ae5fc90a",
@@ -98,7 +99,7 @@
                   "children": [],
                   "id": "ad46c30b-0450-4938-be6a-29885dbd4fd2",
                   "settings": {
-                    "allowMulticlass": false,
+                    "allowMulticlass": true,
                     "gap": 0,
                     "label": "Class",
                     "padding": 0
@@ -132,7 +133,7 @@
               "id": "c83a973d-d448-4ab1-bd59-c7eebdfc30d8",
               "settings": {
                 "columns": 6,
-                "gap": 8,
+                "gap": 10,
                 "padding": 0,
                 "statKeys": [],
                 "width": 0
@@ -150,54 +151,6 @@
         },
         {
           "children": [
-            {
-              "children": [
-                {
-                  "children": [],
-                  "id": "9dcb0381-6f75-4ac2-9dad-3d56bbe44f0d",
-                  "settings": {
-                    "formula": "Math.floor(({{level}} - 1) / 4) + 2",
-                    "gap": 0,
-                    "padding": 0,
-                    "width": 0
-                  },
-                  "type": "proficiency-bonus"
-                },
-                {
-                  "children": [
-                    {
-                      "children": [],
-                      "id": "36adf72a-6075-496f-a9f5-5245ee10f75c",
-                      "settings": {
-                        "columns": 2,
-                        "gap": 5,
-                        "padding": 0
-                      },
-                      "type": "auto-skills"
-                    }
-                  ],
-                  "id": "32717a86-e36e-429e-8a33-fa537f1be17a",
-                  "settings": {
-                    "description": "Skills represent **specific areas of expertise a character can train in**. Each skill is tied to one of the six ability scores (STR, DEX, CON, INT, WIS, CHA).\n\nThey are used to check how good a character did something, based on what skill correlates to the action he will perform.\n\n*The calculation of skills modifier its:*\n**(Stat mod)** + **(proficiency bonus if profficient)**",
-                    "gap": 8,
-                    "grow": true,
-                    "padding": 8,
-                    "title": "Skills",
-                    "width": 0
-                  },
-                  "type": "section"
-                }
-              ],
-              "id": "bb9f075d-2525-4142-89df-e3d40f2986ff",
-              "settings": {
-                "direction": "vertical",
-                "gap": 10,
-                "padding": 0,
-                "title": "Container",
-                "width": 44
-              },
-              "type": "container"
-            },
             {
               "children": [
                 {
@@ -224,6 +177,30 @@
                     "width": 0
                   },
                   "type": "section"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "36adf72a-6075-496f-a9f5-5245ee10f75c",
+                      "settings": {
+                        "columns": 2,
+                        "gap": 5,
+                        "padding": 0
+                      },
+                      "type": "auto-skills"
+                    }
+                  ],
+                  "id": "32717a86-e36e-429e-8a33-fa537f1be17a",
+                  "settings": {
+                    "description": "Skills represent **specific areas of expertise a character can train in**. Each skill is tied to one of the six ability scores (STR, DEX, CON, INT, WIS, CHA).\n\nThey are used to check how good a character did something, based on what skill correlates to the action he will perform.\n\n*The calculation of skills modifier its:*\n**(Stat mod)** + **(proficiency bonus if profficient)**",
+                    "gap": 8,
+                    "grow": true,
+                    "padding": 8,
+                    "title": "Skills",
+                    "width": 0
+                  },
+                  "type": "section"
                 }
               ],
               "id": "84774db3-c5ce-4d65-a9fd-fc22af06da51",
@@ -233,6 +210,130 @@
                 "padding": 0,
                 "title": "Container",
                 "width": 0
+              },
+              "type": "container"
+            },
+            {
+              "children": [
+                {
+                  "children": [],
+                  "id": "9dcb0381-6f75-4ac2-9dad-3d56bbe44f0d",
+                  "settings": {
+                    "formula": "Math.floor(({{level}} - 1) / 4) + 2",
+                    "gap": 0,
+                    "padding": 0,
+                    "width": 0
+                  },
+                  "type": "proficiency-bonus"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "children": [],
+                          "id": "bce1ccb4-c308-48c8-813d-ee68e82d754a",
+                          "settings": {
+                            "direction": "vertical",
+                            "gap": 0,
+                            "height": 92,
+                            "label": "AC",
+                            "padding": 0,
+                            "shieldView": true,
+                            "value": "10",
+                            "width": 15
+                          },
+                          "type": "static-counter"
+                        },
+                        {
+                          "children": [],
+                          "id": "39d64b76-9569-49ca-9976-2001e23c979b",
+                          "settings": {
+                            "direction": "vertical",
+                            "gap": 0,
+                            "height": 92,
+                            "label": "HP",
+                            "padding": 0,
+                            "shieldView": true,
+                            "value": "10",
+                            "width": 15
+                          },
+                          "type": "static-counter"
+                        },
+                        {
+                          "children": [
+                            {
+                              "children": [],
+                              "id": "3a3e7c3b-9857-45b3-ac83-206430b37f7b",
+                              "settings": {
+                                "direction": "horizontal",
+                                "gap": 0,
+                                "height": 0,
+                                "label": "Initiative",
+                                "padding": 0,
+                                "shieldView": true,
+                                "value": "{{stat.dex.points}}",
+                                "width": 0
+                              },
+                              "type": "static-counter"
+                            },
+                            {
+                              "children": [],
+                              "id": "2e166ed7-3518-4508-a51a-80b4fe76a651",
+                              "settings": {
+                                "direction": "horizontal",
+                                "gap": 0,
+                                "height": 0,
+                                "label": "Speed",
+                                "padding": 0,
+                                "shieldView": true,
+                                "value": "10 feet",
+                                "width": 0
+                              },
+                              "type": "static-counter"
+                            }
+                          ],
+                          "id": "23242ea8-c116-4293-a03c-48880e0647cd",
+                          "settings": {
+                            "direction": "vertical",
+                            "gap": 8,
+                            "padding": 0,
+                            "title": "Container",
+                            "width": 0
+                          },
+                          "type": "container"
+                        }
+                      ],
+                      "id": "10b7696d-9046-4f19-88ae-073e15f1f710",
+                      "settings": {
+                        "direction": "horizontal",
+                        "gap": 8,
+                        "padding": 0,
+                        "title": "Container",
+                        "width": 0
+                      },
+                      "type": "container"
+                    }
+                  ],
+                  "id": "a85371bd-0c84-46ac-9fff-66f6fa2e6f03",
+                  "settings": {
+                    "description": "",
+                    "direction": "row",
+                    "gap": 8,
+                    "padding": 8,
+                    "title": "Combat",
+                    "width": 0
+                  },
+                  "type": "section"
+                }
+              ],
+              "id": "bb9f075d-2525-4142-89df-e3d40f2986ff",
+              "settings": {
+                "direction": "vertical",
+                "gap": 10,
+                "padding": 0,
+                "title": "Container",
+                "width": 44
               },
               "type": "container"
             }

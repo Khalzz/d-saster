@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Field from "../../../../components/ui/Field";
 
 export function NumberField({
@@ -16,12 +16,12 @@ export function NumberField({
   max?: number;
   suffix?: string;
 }) {
-  const [raw, setRaw] = useState<string>(String(value));
+  const safeValue = typeof value === "number" && !isNaN(value) ? value : min;
+  const [raw, setRaw] = useState<string>(String(safeValue));
 
-  // Sync external value changes
-  if (raw !== "" && Number(raw) !== value) {
-    setRaw(String(value));
-  }
+  useEffect(() => {
+    setRaw(String(typeof value === "number" && !isNaN(value) ? value : min));
+  }, [value, min]);
 
   return (
     <Field label={label}>
@@ -39,7 +39,7 @@ export function NumberField({
             if (!isNaN(n)) onChange(Math.max(min, max !== undefined ? Math.min(n, max) : n));
           }}
           onBlur={() => {
-            if (raw === "") {
+            if (raw === "" || isNaN(Number(raw))) {
               setRaw(String(min));
               onChange(min);
             }

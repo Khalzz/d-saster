@@ -1,6 +1,11 @@
 // ── Node types ─────────────────────────────────────────────────────────────
 export type NodeType = string;
 
+export interface VarDef {
+  key: string;
+  description: string;
+}
+
 // ── Node type config (passed to the editor) ────────────────────────────────
 export interface NodeTypeConfig {
   icon: React.ReactNode;
@@ -21,6 +26,7 @@ export interface NodePreviewProps {
 export interface NodeSettingsProps {
   settings: Record<string, unknown>;
   onChange: (patch: Record<string, unknown>) => void;
+  availableVars?: VarDef[];
 }
 
 // ── Shared settings present on every node ──────────────────────────────────
@@ -34,6 +40,7 @@ export interface SectionSettings extends NodeSettings {
   title: string;
   width: number; // percentage, 0 = full width
   description: string;
+  direction: "row" | "column";
 }
 
 export interface ContainerSettings extends NodeSettings {
@@ -57,6 +64,28 @@ export interface LevelCountSettings extends NodeSettings {
   label: string;
   min: number;
   max: number;
+}
+
+export interface StaticCounterSettings extends NodeSettings {
+  label: string;   // handlebar expression
+  value: string;   // handlebar expression
+  direction: "vertical" | "horizontal";
+  shieldView: boolean;
+  width: number;   // percentage, 0 = auto
+  height: number;  // px, 0 = auto
+}
+
+export interface CounterSettings extends NodeSettings {
+  label: string;
+  max: number;
+  hasMax: boolean;
+  allowNegative: boolean;
+  isStatic: boolean;
+  staticValue: string;
+  // Static display options
+  shieldView: boolean; // rounded-full on bottom, square on top; off = rounded-md all
+  width: number;       // px, 0 = auto
+  height: number;      // px, 0 = auto
 }
 
 export interface ClassSelectorSettings extends NodeSettings {
@@ -100,7 +129,7 @@ export interface ProficiencyBonusSettings extends NodeSettings {
 export interface LayoutNode {
   id: string;
   type: NodeType;
-  settings: SectionSettings | ContainerSettings | ImageSettings | TextInputSettings | LevelCountSettings | ClassSelectorSettings | GridSettings | StatSettings | AutoStatsSettings | AutoSkillsSettings | AutoSavingThrowsSettings | ProficiencyBonusSettings;
+  settings: SectionSettings | ContainerSettings | ImageSettings | TextInputSettings | LevelCountSettings | CounterSettings | StaticCounterSettings | ClassSelectorSettings | GridSettings | StatSettings | AutoStatsSettings | AutoSkillsSettings | AutoSavingThrowsSettings | ProficiencyBonusSettings;
   children: LayoutNode[];
 }
 
@@ -109,7 +138,7 @@ export function createSectionNode(title = "Section"): LayoutNode {
   return {
     id: crypto.randomUUID(),
     type: "section",
-    settings: { title, padding: 8, gap: 8, width: 0, description: "" } satisfies SectionSettings,
+    settings: { title, padding: 8, gap: 8, width: 0, description: "", direction: "column" } satisfies SectionSettings,
     children: [],
   };
 }
@@ -146,6 +175,24 @@ export function createLevelCountNode(label = "Level"): LayoutNode {
     id: crypto.randomUUID(),
     type: "level-count",
     settings: { label, min: 0, max: 20, padding: 0, gap: 0 } satisfies LevelCountSettings,
+    children: [],
+  };
+}
+
+export function createCounterNode(label = "Counter"): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "counter",
+    settings: { label, max: 100, hasMax: false, allowNegative: false, isStatic: false, staticValue: "", shieldView: false, width: 0, height: 0, padding: 0, gap: 0 } satisfies CounterSettings,
+    children: [],
+  };
+}
+
+export function createStaticCounterNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "static-counter",
+    settings: { label: "Label", value: "", direction: "vertical", shieldView: false, width: 0, height: 0, padding: 0, gap: 0 } satisfies StaticCounterSettings,
     children: [],
   };
 }
@@ -249,11 +296,11 @@ export function removeNode(
 export function updateNodeSettings(
   nodes: LayoutNode[],
   targetId: string,
-  patch: Partial<SectionSettings & ContainerSettings>,
+  patch: Record<string, unknown>,
 ): LayoutNode[] {
   return nodes.map((node) => {
     if (node.id === targetId) {
-      return { ...node, settings: { ...node.settings, ...patch } };
+      return { ...node, settings: { ...(node.settings as unknown as Record<string, unknown>), ...patch } as unknown as LayoutNode["settings"] };
     }
     if (node.children.length > 0) {
       return { ...node, children: updateNodeSettings(node.children, targetId, patch) };

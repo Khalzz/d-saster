@@ -39,6 +39,7 @@ export interface Character {
   armorClass: number;
   initiative: number;
   speed: number;
+  customFields?: Record<string, string | number>;
 }
 
 const DEFAULT_STAT_DEFS: StatDefinition[] = [

@@ -15,6 +15,10 @@ import { HierarchyTree } from "./HierarchyTree";
 import { SheetPreview } from "./SheetPreview";
 import { SettingsPanel } from "./SettingsPanel";
 import { coreNodeTypes } from "./nodes";
+import { invoke } from "@tauri-apps/api/core";
+import { collectSheetVars } from "../handlebars";
+import type { VarDef } from "../types";
+import type { Ruleset } from "../../ruleset/ruleset-editor";
 
 // ── Context menu state ─────────────────────────────────────────────────────
 interface MenuState {
@@ -28,11 +32,31 @@ interface FormEditorProps {
   nodes: LayoutNode[];
   onChange: (nodes: LayoutNode[]) => void;
   nodeTypes: Record<string, NodeTypeConfig>;
+  extraVars?: VarDef[];
 }
 
-export function FormEditor({ nodes, onChange, nodeTypes }: FormEditorProps) {
+export function FormEditor({ nodes, onChange, nodeTypes, extraVars = [] }: FormEditorProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [statVars, setStatVars] = useState<VarDef[]>([]);
+
+  useEffect(() => {
+    invoke<Ruleset[]>("list_rulesets").then((rulesets) => {
+      const seen = new Set<string>();
+      const vars: VarDef[] = [];
+      for (const r of rulesets ?? []) {
+        for (const stat of r.stats ?? []) {
+          const base = `stat.${stat.key}`;
+          if (!seen.has(base)) {
+            seen.add(base);
+            vars.push({ key: `${base}.points`, description: `${stat.label} — raw points` });
+            vars.push({ key: `${base}.mod`,    description: `${stat.label} — modifier` });
+          }
+        }
+      }
+      setStatVars(vars);
+    }).catch(() => {});
+  }, []);
 
   // Convenience: single selected node for settings panel
   const selectedId = selectedIds.size === 1 ? [...selectedIds][0] : null;
@@ -60,6 +84,16 @@ export function FormEditor({ nodes, onChange, nodeTypes }: FormEditorProps) {
       setMenu({ nodeId, top: e.clientY, left: e.clientX });
     }
   }, []);
+
+  const availableVars = useMemo(() => {
+    const sheet = collectSheetVars(nodes);
+    const seen = new Set(sheet.map(v => v.key));
+    const all = [...sheet];
+    for (const v of [...statVars, ...extraVars]) {
+      if (!seen.has(v.key)) { seen.add(v.key); all.push(v); }
+    }
+    return all;
+  }, [nodes, statVars, extraVars]);
 
   // Merge core layout types (row/column) with consumer-provided types.
   // Core types' allowedChildren are extended with consumer-provided type keys.
@@ -201,6 +235,7 @@ export function FormEditor({ nodes, onChange, nodeTypes }: FormEditorProps) {
           selectedCount={selectedIds.size}
           onChange={handleSettingsChange}
           nodeTypes={allNodeTypes}
+          availableVars={availableVars}
         />
       </aside>
 
@@ -208,7 +243,7 @@ export function FormEditor({ nodes, onChange, nodeTypes }: FormEditorProps) {
       {menu &&
         createPortal(
           <>
-            <div className="fixed inset-0 z-[998]" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null); }} />
+            <div className="fixed inset-0 z-998" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null); }} />
             <div
               style={{
                 position: "fixed",

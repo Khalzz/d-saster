@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 function Dropdown(
-  { children }: { children: React.ReactNode },
+  { children, className }: { children: React.ReactNode; className?: string },
 ) {
   const ref = useRef<HTMLDivElement>(null);
   const [direction, setDirection] = useState<"down" | "up">("down");
@@ -30,7 +30,7 @@ function Dropdown(
   return (
     <div
       ref={ref}
-      className={`absolute w-48 bg-surface border border-gold-500 rounded-md text-gold-500 overflow-hidden pointer-events-auto ${
+      className={`absolute ${className ?? "w-48"} bg-surface border border-gold-500 rounded-md text-gold-500 overflow-hidden pointer-events-auto ${
         direction === "down" ? "mt-2" : "bottom-full mb-2"
       } ${align === "left" ? "left-0" : "right-0"}`}
     >

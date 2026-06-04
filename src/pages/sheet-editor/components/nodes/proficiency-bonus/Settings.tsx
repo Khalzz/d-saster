@@ -11,7 +11,7 @@ const FORMULA_TOOLTIP = `Math expression for the proficiency bonus. Type \`{{\` 
 - \`{{level}}\` — Character level
 - \`{{proficiency_bonus}}\` — Current proficiency bonus value`;
 
-export function ProficiencyBonusSettingsForm({ settings, onChange }: NodeSettingsProps) {
+export function ProficiencyBonusSettingsForm({ settings, onChange, availableVars }: NodeSettingsProps) {
   const s = settings as unknown as ProficiencyBonusSettings;
 
   return (
@@ -30,6 +30,7 @@ export function ProficiencyBonusSettingsForm({ settings, onChange }: NodeSetting
             onChange={(v) => onChange({ formula: v })}
             placeholder="Math.floor(({{level}} - 1) / 4) + 2"
             defaultFormula="Math.floor(({{level}} - 1) / 4) + 2"
+            extraVars={availableVars}
           />
         </Field>
       </div>
