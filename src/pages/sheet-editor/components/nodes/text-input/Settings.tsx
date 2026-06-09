@@ -30,6 +30,16 @@ export function TextInputSettingsForm({ settings, onChange }: NodeSettingsProps)
           />
         </Field>
       </div>
+      <div className="mb-3">
+        <NumberField
+          label="Width"
+          value={s.width}
+          onChange={(v) => onChange({ width: v })}
+          min={0}
+          max={100}
+          suffix="%"
+        />
+      </div>
       <NumberField
         label="Padding"
         value={s.padding}

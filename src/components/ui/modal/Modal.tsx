@@ -28,7 +28,7 @@ export default function Modal({ children, className, isOpen, onClose }: { childr
         }
       }}
     >
-      <div>
+      <div className="w-full p-4 flex justify-center">
         {children}
       </div>
     </div>

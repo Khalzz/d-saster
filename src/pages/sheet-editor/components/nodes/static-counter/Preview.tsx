@@ -1,6 +1,6 @@
 import type { StaticCounterSettings } from "../../../types";
 import type { NodePreviewProps } from "../types";
-import { StaticCounterBox, FormulaDisplay } from "../counter/StaticCounterBox";
+import { StaticCounterBox, FormulaDisplay } from "../../../../../components/ui/character-sheet/nodes/count-node/static-counter-box";
 
 export function StaticCounterPreview({ node, selectedIds, onSelect }: NodePreviewProps) {
   const s = node.settings as StaticCounterSettings;

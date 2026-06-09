@@ -16,7 +16,7 @@ import { SheetPreview } from "./SheetPreview";
 import { SettingsPanel } from "./SettingsPanel";
 import { coreNodeTypes } from "./nodes";
 import { invoke } from "@tauri-apps/api/core";
-import { collectSheetVars } from "../handlebars";
+import { collectSheetVars, labelToVar } from "../handlebars";
 import type { VarDef } from "../types";
 import type { Ruleset } from "../../ruleset/ruleset-editor";
 
@@ -39,22 +39,48 @@ export function FormEditor({ nodes, onChange, nodeTypes, extraVars = [] }: FormE
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [statVars, setStatVars] = useState<VarDef[]>([]);
+  const [specieVars, setSpecieVars] = useState<VarDef[]>([]);
 
   useEffect(() => {
     invoke<Ruleset[]>("list_rulesets").then((rulesets) => {
-      const seen = new Set<string>();
-      const vars: VarDef[] = [];
+      const statSeen = new Set<string>();
+      const statList: VarDef[] = [];
+      const specieSeen = new Set<string>();
+      const specieList: VarDef[] = [
+        { key: "specie.name", description: "Selected species name" },
+        { key: "specie.size", description: "Selected species size" },
+        { key: "specie.unit", description: "Selected species distance unit (ft / m)" },
+      ];
+      specieSeen.add("specie.name");
+      specieSeen.add("specie.size");
+      specieSeen.add("specie.unit");
+
       for (const r of rulesets ?? []) {
         for (const stat of r.stats ?? []) {
           const base = `stat.${stat.key}`;
-          if (!seen.has(base)) {
-            seen.add(base);
-            vars.push({ key: `${base}.points`, description: `${stat.label} — raw points` });
-            vars.push({ key: `${base}.mod`,    description: `${stat.label} — modifier` });
+          if (!statSeen.has(base)) {
+            statSeen.add(base);
+            statList.push({ key: `${base}.points`, description: `${stat.label} — raw points` });
+            statList.push({ key: `${base}.mod`,    description: `${stat.label} — modifier` });
+          }
+        }
+        for (const sp of r.species ?? []) {
+          for (const m of sp.movements ?? []) {
+            const k = `specie.movement.${labelToVar(m.label)}`;
+            if (!specieSeen.has(k)) { specieSeen.add(k); specieList.push({ key: k, description: `Species movement — ${m.label}` }); }
+          }
+          for (const s of sp.senses ?? []) {
+            const k = `specie.sense.${labelToVar(s.label)}`;
+            if (!specieSeen.has(k)) { specieSeen.add(k); specieList.push({ key: k, description: `Species sense — ${s.label}` }); }
+          }
+          for (const key of Object.keys(sp.statModifiers ?? {})) {
+            const k = `specie.stat.${key}`;
+            if (!specieSeen.has(k)) { specieSeen.add(k); specieList.push({ key: k, description: `Species stat modifier — ${key}` }); }
           }
         }
       }
-      setStatVars(vars);
+      setStatVars(statList);
+      setSpecieVars(specieList);
     }).catch(() => {});
   }, []);
 
@@ -89,11 +115,11 @@ export function FormEditor({ nodes, onChange, nodeTypes, extraVars = [] }: FormE
     const sheet = collectSheetVars(nodes);
     const seen = new Set(sheet.map(v => v.key));
     const all = [...sheet];
-    for (const v of [...statVars, ...extraVars]) {
+    for (const v of [...statVars, ...specieVars, ...extraVars]) {
       if (!seen.has(v.key)) { seen.add(v.key); all.push(v); }
     }
     return all;
-  }, [nodes, statVars, extraVars]);
+  }, [nodes, statVars, specieVars, extraVars]);
 
   // Merge core layout types (row/column) with consumer-provided types.
   // Core types' allowedChildren are extended with consumer-provided type keys.

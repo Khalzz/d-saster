@@ -58,6 +58,7 @@ export interface ImageSettings extends NodeSettings {
 export interface TextInputSettings extends NodeSettings {
   label: string;
   placeholder: string;
+  width: number; // percentage, 0 = full width
 }
 
 export interface LevelCountSettings extends NodeSettings {
@@ -125,11 +126,20 @@ export interface ProficiencyBonusSettings extends NodeSettings {
   width: number;     // percentage (1-100), 0 = auto
 }
 
+export interface SpecieSettings extends NodeSettings {
+  label: string;
+  width: number;     // percentage (1-100), 0 = auto
+}
+
+export interface FeaturesAndTraitsSettings extends NodeSettings {
+  width: number;     // percentage (1-100), 0 = auto
+}
+
 // ── The recursive layout node ──────────────────────────────────────────────
 export interface LayoutNode {
   id: string;
   type: NodeType;
-  settings: SectionSettings | ContainerSettings | ImageSettings | TextInputSettings | LevelCountSettings | CounterSettings | StaticCounterSettings | ClassSelectorSettings | GridSettings | StatSettings | AutoStatsSettings | AutoSkillsSettings | AutoSavingThrowsSettings | ProficiencyBonusSettings;
+  settings: SectionSettings | ContainerSettings | ImageSettings | TextInputSettings | LevelCountSettings | CounterSettings | StaticCounterSettings | ClassSelectorSettings | GridSettings | StatSettings | AutoStatsSettings | AutoSkillsSettings | AutoSavingThrowsSettings | ProficiencyBonusSettings | SpecieSettings | FeaturesAndTraitsSettings;
   children: LayoutNode[];
 }
 
@@ -165,7 +175,7 @@ export function createTextInputNode(label = "Label"): LayoutNode {
   return {
     id: crypto.randomUUID(),
     type: "text-input",
-    settings: { label, placeholder: "", padding: 0, gap: 0 } satisfies TextInputSettings,
+    settings: { label, placeholder: "", width: 0, padding: 0, gap: 0 } satisfies TextInputSettings,
     children: [],
   };
 }
@@ -247,6 +257,24 @@ export function createAutoSavingThrowsNode(): LayoutNode {
     id: crypto.randomUUID(),
     type: "auto-saving-throws",
     settings: { columns: 3, padding: 0, gap: 4, formula: "{{stat_mod}} + {{proficiency_bonus}}", width: 0 } satisfies AutoSavingThrowsSettings,
+    children: [],
+  };
+}
+
+export function createSpecieNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "specie",
+    settings: { label: "Specie", width: 0, padding: 0, gap: 0 } satisfies SpecieSettings,
+    children: [],
+  };
+}
+
+export function createFeaturesAndTraitsNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "features-and-traits",
+    settings: { width: 0, padding: 0, gap: 0 } satisfies FeaturesAndTraitsSettings,
     children: [],
   };
 }

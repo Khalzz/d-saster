@@ -69,7 +69,7 @@ export function CharacterSettingsCard({ char, selectedRuleset, activeClasses, on
         <div className="flex gap-3 items-end">
           <Field label="Name" className="flex-1">
             <input
-              className="field-input"
+              className=" "
               value={char.name}
               onChange={(e) => onChange({ name: e.target.value })}
               placeholder="Character name"
@@ -112,7 +112,7 @@ export function CharacterSettingsCard({ char, selectedRuleset, activeClasses, on
         <div className="flex gap-3">
           <Field label="Race" className="flex-1">
             <input
-              className="field-input"
+              className=" "
               value={char.race}
               onChange={(e) => onChange({ race: e.target.value })}
               placeholder="Human, Elf, Dwarf…"
@@ -120,7 +120,7 @@ export function CharacterSettingsCard({ char, selectedRuleset, activeClasses, on
           </Field>
           <Field label="Origin" className="flex-1">
             <input
-              className="field-input"
+              className=" "
               value={char.origin}
               onChange={(e) => onChange({ origin: e.target.value })}
               placeholder="Acolyte, Soldier…"
@@ -432,7 +432,7 @@ export function CharacterSettingsCard({ char, selectedRuleset, activeClasses, on
             <Field label="Class name">
               <input
                 autoFocus
-                className="field-input"
+                className=" "
                 value={newClassName}
                 onChange={(e) => setNewClassName(e.target.value)}
                 placeholder="Fighter, Wizard, Rogue…"
@@ -457,14 +457,14 @@ export function CharacterSettingsCard({ char, selectedRuleset, activeClasses, on
                 {newClassModifiers.map((mod, i) => (
                   <div key={i} className="flex gap-2 items-center">
                     <input
-                      className="field-input flex-1 min-w-0"
+                      className="  flex-1 min-w-0"
                       placeholder="Name (e.g. STR, AC…)"
                       value={mod.name}
                       onChange={(e) => setNewClassModifiers(prev => prev.map((m, j) => j === i ? { ...m, name: e.target.value } : m))}
                     />
                     <input
                       type="number"
-                      className="field-input text-center shrink-0"
+                      className="  text-center shrink-0"
                       style={{ width: "4rem" }}
                       value={mod.value}
                       onChange={(e) => setNewClassModifiers(prev => prev.map((m, j) => j === i ? { ...m, value: parseInt(e.target.value) || 0 } : m))}

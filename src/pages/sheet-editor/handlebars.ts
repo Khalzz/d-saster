@@ -51,7 +51,27 @@ export function collectSheetVars(nodes: LayoutNode[]): VarDef[] {
   return vars;
 }
 
-/** Replace all {{var}} and {{namespace.key}} tokens in a formula string with values from the vars map */
+/** Replace all {{var}} tokens with their raw string representation (for text/display contexts). */
 export function resolveHandlebars(formula: string, vars: Record<string, string | number>): string {
   return formula.replace(/\{\{([\w.]+)\}\}/g, (_, key) => key in vars ? String(vars[key]) : "0");
+}
+
+/**
+ * Resolve {{var}} tokens and evaluate the result as a JS expression.
+ * String values are JSON-quoted so they survive JS evaluation intact
+ * (e.g. "+3" stays "+3" instead of becoming 3).
+ * Returns the evaluated result as a string, or the resolved template on error.
+ */
+export function evalFormula(formula: string, vars: Record<string, string | number>): string {
+  const resolved = formula.replace(/\{\{([\w.]+)\}\}/g, (_, key) => {
+    if (!(key in vars)) return "0";
+    const v = vars[key];
+    return typeof v === "string" ? JSON.stringify(v) : String(v);
+  });
+  try {
+    return String(Function(`"use strict"; return (${resolved})`)());
+  } catch {
+    // Strip surrounding quotes if the resolved value was a plain string literal
+    return resolved.replace(/^"(.*)"$/s, "$1");
+  }
 }

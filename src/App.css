@@ -85,26 +85,23 @@
 
 @layer base {
   button {
-    @apply bg-surface border border-gold-500 min-w-10 w-fit h-8 pointer-events-auto rounded-md text-gold-500
-          hover:border-gold-400 hover:bg-surface-hover
+    @apply bg-surface border border-gold-500/30 w-fit h-8 pointer-events-auto rounded-md text-gold-500
+          hover:border-gold-500/30 hover:bg-gold-500/10
           transition-all cursor-pointer select-none
-          ring-0 active:ring active:ring-gold-500 flex items-center justify-center;
+          active:border active:border-gold-500 active:hover:bg-gold-500/50 active:text-surface flex items-center justify-center text-xs;
   }
-}
 
-.field-input {
-  background-color: var(--color-base);
-  border: 1px solid color-mix(in srgb, var(--color-gold-500) 30%, transparent);
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  color: var(--color-gold-200);
-  font-size: 0.875rem;
-  outline: none;
-  transition: border-color 0.15s;
-  width: 100%;
-}
-.field-input:focus {
-  border-color: color-mix(in srgb, var(--color-gold-500) 60%, transparent);
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="reset"]) {
+    @apply bg-base border border-gold-500/30 rounded-md px-3 py-2 text-gold-200 text-sm outline-none transition-colors w-full h-8 focus:border-gold-500/60;
+  }
+
+  input[type="number"] {
+    appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    appearance: none;
+  }
 }
 
 html, body, #root {
@@ -127,6 +124,21 @@ html, body, #root {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-gold-600);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-resizer {
+  background-color: transparent;
+  background-image: linear-gradient(
+    -45deg,
+    transparent 40%, var(--color-gold-700) 40%, var(--color-gold-700) 50%, transparent 50%,
+    transparent 65%, var(--color-gold-700) 65%, var(--color-gold-700) 75%, transparent 75%,
+    transparent 90%, var(--color-gold-700) 90%, var(--color-gold-700) 100%, transparent 100%
+  );
+  background-size: 7px 7px;
+  background-repeat: no-repeat;
+  background-position: bottom right;
 }
 
 :root {

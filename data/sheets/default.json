@@ -32,7 +32,8 @@
                         "gap": 0,
                         "label": "Name",
                         "padding": 0,
-                        "placeholder": ""
+                        "placeholder": "",
+                        "width": 0
                       },
                       "type": "text-input"
                     },
@@ -64,14 +65,14 @@
                   "children": [
                     {
                       "children": [],
-                      "id": "6116e591-4900-49ba-a134-49c6e17b8d68",
+                      "id": "8a1f1344-f3c9-4ef6-9b76-6f0a0f9065e5",
                       "settings": {
                         "gap": 0,
-                        "label": "Race",
+                        "label": "Specie",
                         "padding": 0,
-                        "placeholder": ""
+                        "width": 0
                       },
-                      "type": "text-input"
+                      "type": "specie"
                     },
                     {
                       "children": [],
@@ -109,7 +110,7 @@
               ],
               "id": "9bebf3e8-25b8-4be5-a5d9-78a235c80ec3",
               "settings": {
-                "gap": 8,
+                "gap": 4,
                 "padding": 8,
                 "title": "Character Settings"
               },
@@ -232,12 +233,12 @@
                       "children": [
                         {
                           "children": [],
-                          "id": "bce1ccb4-c308-48c8-813d-ee68e82d754a",
+                          "id": "39d64b76-9569-49ca-9976-2001e23c979b",
                           "settings": {
                             "direction": "vertical",
                             "gap": 0,
                             "height": 92,
-                            "label": "AC",
+                            "label": "HP",
                             "padding": 0,
                             "shieldView": true,
                             "value": "10",
@@ -247,12 +248,12 @@
                         },
                         {
                           "children": [],
-                          "id": "39d64b76-9569-49ca-9976-2001e23c979b",
+                          "id": "bce1ccb4-c308-48c8-813d-ee68e82d754a",
                           "settings": {
                             "direction": "vertical",
                             "gap": 0,
                             "height": 92,
-                            "label": "HP",
+                            "label": "AC",
                             "padding": 0,
                             "shieldView": true,
                             "value": "10",
@@ -272,7 +273,7 @@
                                 "label": "Initiative",
                                 "padding": 0,
                                 "shieldView": true,
-                                "value": "{{stat.dex.points}}",
+                                "value": "{{stat.dex.mod}}",
                                 "width": 0
                               },
                               "type": "static-counter"
@@ -287,7 +288,7 @@
                                 "label": "Speed",
                                 "padding": 0,
                                 "shieldView": true,
-                                "value": "10 feet",
+                                "value": "{{specie.movement.walk}} Ft",
                                 "width": 0
                               },
                               "type": "static-counter"
@@ -322,6 +323,30 @@
                     "gap": 8,
                     "padding": 8,
                     "title": "Combat",
+                    "width": 0
+                  },
+                  "type": "section"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "94300411-9ce2-4d2d-b329-bc38f42f75ce",
+                      "settings": {
+                        "gap": 0,
+                        "padding": 0,
+                        "width": 0
+                      },
+                      "type": "features-and-traits"
+                    }
+                  ],
+                  "id": "cbb021f1-b7a2-4bbe-b1de-de0333f5c14e",
+                  "settings": {
+                    "description": "",
+                    "direction": "column",
+                    "gap": 8,
+                    "padding": 8,
+                    "title": "Features & Traits",
                     "width": 0
                   },
                   "type": "section"

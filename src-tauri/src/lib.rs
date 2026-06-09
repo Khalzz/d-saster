@@ -350,10 +350,18 @@ struct RulesetData {
     modifier_formula: String,
     #[serde(default)]
     skill_formula: String,
+    #[serde(default)]
+    saving_throw_formula: String,
+    #[serde(default)]
+    max_level: u32,
     stats: Vec<StatDefinition>,
     classes: Vec<RulesetClass>,
     #[serde(default)]
     skills: Vec<RulesetSkill>,
+    #[serde(default)]
+    traits: Vec<serde_json::Value>,
+    #[serde(default)]
+    species: Vec<serde_json::Value>,
 }
 
 fn rulesets_dir() -> Result<PathBuf, String> {

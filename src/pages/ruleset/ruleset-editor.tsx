@@ -5,8 +5,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { AlertCircle, Check, ChevronDown, ChevronLeft, Copy, GripVertical, Info, MoreVertical, Plus, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import Field from "../../components/ui/Field";
-import { Dropdown, Option } from "../../components/ui/dropdown/Dropdown";
-import { CounterInput } from "../../components/ui/CounterInput";
+import Modal from "../../components/ui/modal/Modal";
+import { NumberInput } from "../../components/ui/NumberInput";
 
 export interface StatDefinition {
   id?: string;
@@ -20,25 +20,26 @@ export interface RulesetClassModifier {
   value: number;
 }
 
-export interface RulesetRace {
+export interface RulesetSpecieTrait {
   id: string;
   name: string;
-  size: "tiny" | "small" | "medium" | "large";
-  startingLanguages: string;
+  description: string;
+}
+
+export interface RulesetSpecie {
+  id: string;
+  name: string;
+  size: Array<"tiny" | "small" | "medium" | "large" | "huge" | "gargantuan">;
   description: string;
   unit: "ft" | "m";
-  movementWalk: number;
-  movementFly: number;
-  movementSwim: number;
-  movementClimb: number;
-  movementBurrow: number;
+  movements: { label: string; value: number }[];
+  senses: { label: string; value: number }[];
   statModifiers: Record<string, number>;
-  darkvision: number;
-  otherSenses: string;
-  damageResistances: string;
-  damageImmunities: string;
-  conditionImmunities: string;
-  damageVulnerabilities: string;
+  traitIds: string[];
+  damageResistances: string[];
+  damageImmunities: string[];
+  conditionImmunities: string[];
+  damageVulnerabilities: string[];
 }
 
 export interface RulesetClass {
@@ -66,18 +67,20 @@ export interface Ruleset {
   stats: StatDefinition[];
   classes: RulesetClass[];
   skills: RulesetSkill[];
-  races: RulesetRace[];
+  traits: RulesetSpecieTrait[];
+  species: RulesetSpecie[];
 }
 
 const SIDEBAR_SECTIONS = [
   { id: "rs-base",           label: "Base Information" },
-  { id: "rs-char-creation",  label: "Character creation", children: ["rs-char-data", "rs-stats", "rs-saving-throws", "rs-classes", "rs-skills", "rs-sheet"] },
+  { id: "rs-char-creation",  label: "Character creation", children: ["rs-char-data", "rs-stats", "rs-saving-throws", "rs-classes", "rs-skills", "rs-traits", "rs-sheet"] },
   { id: "rs-char-data",      label: "Char. Data",     indent: true, parent: "rs-char-creation" },
   { id: "rs-stats",          label: "Stats",          indent: true, parent: "rs-char-creation" },
   { id: "rs-saving-throws",  label: "Saving Throws",  indent: true, parent: "rs-char-creation" },
   { id: "rs-classes",        label: "Classes",        indent: true, parent: "rs-char-creation" },
   { id: "rs-skills",         label: "Skills",         indent: true, parent: "rs-char-creation" },
-  { id: "rs-races",          label: "Races",          indent: true, parent: "rs-char-creation" },
+  { id: "rs-races",          label: "Species",        indent: true, parent: "rs-char-creation" },
+  { id: "rs-traits",         label: "Traits",         indent: true, parent: "rs-char-creation" },
   { id: "rs-sheet",          label: "Sheet Layout",   indent: true, parent: "rs-char-creation" },
 ];
 
@@ -120,8 +123,8 @@ export default function RulesetEditor() {
 
   const [ruleset, setRuleset] = useState<Ruleset>(() =>
     state?.existing
-      ? { ...state.existing, modifierFormula: state.existing.modifierFormula || "({{stat_points}} - 10) / 2", skillFormula: state.existing.skillFormula || "{{stat_mod}} + {{proficiency_bonus}}", savingThrowFormula: state.existing.savingThrowFormula || "{{stat_mod}} + {{proficiency_bonus}}", skills: state.existing.skills ?? [], maxLevel: state.existing.maxLevel ?? 20, races: state.existing.races ?? [] }
-      : { id: crypto.randomUUID(), name: "", description: "", modifierFormula: "({{stat_points}} - 10) / 2", skillFormula: "{{stat_mod}} + {{proficiency_bonus}}", savingThrowFormula: "{{stat_mod}} + {{proficiency_bonus}}", maxLevel: 20, stats: [], classes: [], skills: [], races: [] }
+      ? { ...state.existing, modifierFormula: state.existing.modifierFormula || "({{stat_points}} - 10) / 2", skillFormula: state.existing.skillFormula || "{{stat_mod}} + {{proficiency_bonus}}", savingThrowFormula: state.existing.savingThrowFormula || "{{stat_mod}} + {{proficiency_bonus}}", skills: state.existing.skills ?? [], maxLevel: state.existing.maxLevel ?? 20, traits: state.existing.traits ?? [], species: state.existing.species ?? [] }
+      : { id: crypto.randomUUID(), name: "", description: "", modifierFormula: "({{stat_points}} - 10) / 2", skillFormula: "{{stat_mod}} + {{proficiency_bonus}}", savingThrowFormula: "{{stat_mod}} + {{proficiency_bonus}}", maxLevel: 20, stats: [], classes: [], skills: [], traits: [], species: [] }
   );
 
   const handleSave = async () => {
@@ -193,30 +196,45 @@ export default function RulesetEditor() {
     setDragStatIdx(to);
   };
 
-  // ── Race helpers ───────────────────────────────────────────────────
-  const [raceModal, setRaceModal] = useState<{ race: RulesetRace; isNew: boolean } | null>(null);
+  // ── Specie helpers ─────────────────────────────────────────────────
+  const [specieModal, setSpecieModal] = useState<{ race: RulesetSpecie; isNew: boolean } | null>(null);
 
-  const openNewRace = () => setRaceModal({
+  const openNewSpecie = () => setSpecieModal({
     isNew: true,
     race: {
-      id: crypto.randomUUID(), name: "", size: "medium", startingLanguages: "", description: "",
-      unit: "ft", movementWalk: 30, movementFly: 0, movementSwim: 0, movementClimb: 0, movementBurrow: 0,
-      statModifiers: {}, darkvision: 0, otherSenses: "",
-      damageResistances: "", damageImmunities: "", conditionImmunities: "", damageVulnerabilities: "",
+      id: crypto.randomUUID(), name: "", size: ["medium"], description: "",
+      unit: "ft", movements: [], senses: [], traitIds: [],
+      statModifiers: {},
+      damageResistances: [], damageImmunities: [], conditionImmunities: [], damageVulnerabilities: [],
     },
   });
 
-  const saveRace = (race: RulesetRace) => {
-    setRuleset(r => {
-      const exists = r.races.some(x => x.id === race.id);
-      return { ...r, races: exists ? r.races.map(x => x.id === race.id ? race : x) : [...r.races, race] };
-    });
-    setRaceModal(null);
+  const saveSpecie = (race: RulesetSpecie) => {
+    const exists = ruleset.species.some(x => x.id === race.id);
+    const updated = { ...ruleset, species: exists ? ruleset.species.map(x => x.id === race.id ? race : x) : [...ruleset.species, race] };
+    setRuleset(updated);
+    invoke("save_ruleset", { ruleset: updated }).catch(() => {});
+    setSpecieModal(null);
   };
 
-  const removeRace = (id: string) => setRuleset(r => ({ ...r, races: r.races.filter(x => x.id !== id) }));
+  const removeSpecie = (id: string) => {
+    const updated = { ...ruleset, species: ruleset.species.filter(x => x.id !== id) };
+    setRuleset(updated);
+    invoke("save_ruleset", { ruleset: updated }).catch(() => {});
+  };
 
   // ── Class helpers ──────────────────────────────────────────────────
+  const addTrait = () => {
+    const id = crypto.randomUUID();
+    setRuleset(r => ({ ...r, traits: [...r.traits, { id, name: "", description: "" }] }));
+  };
+
+  const updateTrait = (i: number, p: Partial<RulesetSpecieTrait>) =>
+    setRuleset(r => ({ ...r, traits: r.traits.map((t, j) => j === i ? { ...t, ...p } : t) }));
+
+  const removeTrait = (i: number) =>
+    setRuleset(r => ({ ...r, traits: r.traits.filter((_, j) => j !== i) }));
+
   const addClass = () => {
     const id = crypto.randomUUID();
     setLastAddedClassId(id);
@@ -349,7 +367,7 @@ export default function RulesetEditor() {
               <div className="flex flex-col gap-3">
                 <Field label="Name">
                   <input
-                    className="field-input"
+                    className=" "
                     value={ruleset.name}
                     onChange={(e) => setRuleset(r => ({ ...r, name: e.target.value }))}
                     placeholder="D&D 5e, Anima, Pathfinder…"
@@ -357,7 +375,7 @@ export default function RulesetEditor() {
                 </Field>
                 <Field label="Description">
                   <textarea
-                    className="field-input resize-none"
+                    className="  resize-none"
                     rows={3}
                     value={ruleset.description}
                     onChange={(e) => setRuleset(r => ({ ...r, description: e.target.value }))}
@@ -382,7 +400,7 @@ export default function RulesetEditor() {
                 type="number"
                 min={1}
                 max={100}
-                className="field-input"
+                className=" "
                 value={ruleset.maxLevel}
                 onChange={(e) => {
                   const n = parseInt(e.target.value);
@@ -513,24 +531,24 @@ export default function RulesetEditor() {
               </div>
             </div>
           </Section>
-          <Section id="rs-races" title="Races" defaultOpen>
+          <Section id="rs-races" title="Species" defaultOpen>
             <div className="border border-gold-500/20 rounded-lg overflow-hidden">
-              {ruleset.races.length === 0 ? (
-                <p className="text-gold-700 text-xs px-3 py-3">No races defined yet.</p>
+              {ruleset.species.length === 0 ? (
+                <p className="text-gold-700 text-xs px-3 py-3">No species defined yet.</p>
               ) : (
                 <div className="p-2 flex flex-col gap-1.5">
-                  {ruleset.races.map((race) => (
+                  {ruleset.species.map((race) => (
                     <div
                       key={race.id}
                       className="flex items-center gap-2 border border-gold-500/20 rounded-lg px-3 py-2 cursor-pointer hover:border-gold-500/40 transition-colors"
-                      onClick={() => setRaceModal({ race, isNew: false })}
+                      onClick={() => setSpecieModal({ race: { ...race, traitIds: race.traitIds ?? [] }, isNew: false })}
                     >
-                      <span className="text-gold-300 text-sm font-medium flex-1 truncate">{race.name || "Unnamed race"}</span>
-                      <span className="text-gold-600 text-[10px] font-semibold uppercase tracking-wider border border-gold-500/20 rounded px-1.5 py-0.5">{race.size}</span>
+                      <span className="text-gold-300 text-sm font-medium flex-1 truncate">{race.name || "Unnamed specie"}</span>
+                      <span className="text-gold-600 text-[10px] font-semibold uppercase tracking-wider border border-gold-500/20 rounded px-1.5 py-0.5">{race.size.join(", ") || "—"}</span>
                       <button
                         type="button"
                         className="w-6! h-6! min-w-0! p-0! bg-transparent! border-0! text-gold-700! hover:text-[#ef4444]! shrink-0"
-                        onClick={(e) => { e.stopPropagation(); removeRace(race.id); }}
+                        onClick={(e) => { e.stopPropagation(); removeSpecie(race.id); }}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -541,21 +559,55 @@ export default function RulesetEditor() {
               <div className="border-t border-gold-500/10">
                 <button
                   className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-0! rounded-none! text-gold-600! hover:text-gold-400! hover:bg-gold-500/5!"
-                  onClick={openNewRace}
+                  onClick={openNewSpecie}
                 >
-                  <Plus className="h-3 w-3" /> Add Race
+                  <Plus className="h-3 w-3" /> Add Specie
                 </button>
               </div>
             </div>
           </Section>
 
-          {raceModal && (
-            <RaceModal
-              race={raceModal.race}
-              isNew={raceModal.isNew}
+          <Section id="rs-traits" title="Traits" defaultOpen>
+            <div className="border border-gold-500/20 rounded-lg overflow-hidden">
+              {ruleset.traits.length === 0 ? (
+                <p className="text-gold-700 text-xs px-3 py-3">No traits defined yet.</p>
+              ) : (
+                <div className="p-2 space-y-2">
+                  {ruleset.traits.map((trait, i) => (
+                    <TraitCard
+                      key={trait.id}
+                      trait={trait}
+                      onUpdate={p => updateTrait(i, p)}
+                      onDelete={() => removeTrait(i)}
+                    />
+                  ))}
+                </div>
+              )}
+              <div className="border-t border-gold-500/10">
+                <button
+                  className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border-0! rounded-none! text-gold-600! hover:text-gold-400! hover:bg-gold-500/5!"
+                  onClick={addTrait}
+                >
+                  <Plus className="h-3 w-3" /> Add Trait
+                </button>
+              </div>
+            </div>
+          </Section>
+
+          {specieModal && (
+            <SpecieModal
+              race={specieModal.race}
+              isNew={specieModal.isNew}
               stats={ruleset.stats}
-              onSave={saveRace}
-              onClose={() => setRaceModal(null)}
+              availableTraits={ruleset.traits}
+              onCreateTrait={name => {
+                const id = crypto.randomUUID();
+                const newTrait: RulesetSpecieTrait = { id, name, description: "" };
+                setRuleset(r => ({ ...r, traits: [...r.traits, newTrait] }));
+                return id;
+              }}
+              onSave={saveSpecie}
+              onClose={() => setSpecieModal(null)}
             />
           )}
 
@@ -861,7 +913,7 @@ function FormulaInput({
         </div>
         <div className="flex items-center gap-2">
           <HandlebarInput
-            className="field-input font-mono text-xs flex-1"
+            className="  font-mono text-xs flex-1"
             value={value}
             onChange={onChange}
             placeholder={placeholder ?? "Enter formula…"}
@@ -1044,41 +1096,104 @@ function StatCard({ stat, onUpdate, onRemove, onDuplicate, isDragging, onDragSta
 }
 
 
-function RaceModal({ race: initial, isNew, stats, onSave, onClose }: {
-  race: RulesetRace;
+const RESISTANCE_SECTIONS = [
+  { key: "damageResistances"    as const, label: "Damage Resistances"     },
+  { key: "damageImmunities"     as const, label: "Damage Immunities"      },
+  { key: "conditionImmunities"  as const, label: "Condition Immunities"   },
+  { key: "damageVulnerabilities"as const, label: "Damage Vulnerabilities" },
+];
+
+function SpecieModal({ race: initial, isNew, stats, availableTraits, onCreateTrait, onSave, onClose }: {
+  race: RulesetSpecie;
   isNew: boolean;
   stats: StatDefinition[];
-  onSave: (race: RulesetRace) => void;
+  availableTraits: RulesetSpecieTrait[];
+  onCreateTrait: (name: string) => string;
+  onSave: (race: RulesetSpecie) => void;
   onClose: () => void;
 }) {
-  const [race, setRace] = useState<RulesetRace>(initial);
-  const patch = (p: Partial<RulesetRace>) => setRace(r => ({ ...r, ...p }));
+  const [race, setRace] = useState<RulesetSpecie>(initial);
+  const patch = (p: Partial<RulesetSpecie>) => setRace(r => ({ ...r, ...p }));
   const unitLabel = race.unit;
-  const [sizeOpen, setSizeOpen] = useState(false);
+  const [traitPickerOpen, setTraitPickerOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [activeSections, setActiveSections] = useState<Set<typeof RESISTANCE_SECTIONS[number]["key"]>>(
+    () => new Set(RESISTANCE_SECTIONS.filter(s => initial[s.key].length > 0).map(s => s.key))
+  );
+  const addSectionBtnRef = useRef<HTMLButtonElement>(null);
+  const [sectionPickerPos, setSectionPickerPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const isDirty = JSON.stringify(race) !== JSON.stringify(initial);
+  const handleClose = () => { if (isDirty) setShowConfirm(true); else onClose(); };
+
+  const SIZE_DATA: Record<string, { ft: string; m: string }> = {
+    tiny:       { ft: "2.5 × 2.5 ft",  m: "0.75 × 0.75 m" },
+    small:      { ft: "5 × 5 ft",      m: "1.5 × 1.5 m"   },
+    medium:     { ft: "5 × 5 ft",      m: "1.5 × 1.5 m"   },
+    large:      { ft: "10 × 10 ft",    m: "3 × 3 m"       },
+    huge:       { ft: "15 × 15 ft",    m: "4.5 × 4.5 m"   },
+    gargantuan: { ft: "20 × 20 ft+",   m: "6 × 6 m+"      },
+  };
+
+  const sizeTriggerRef = useRef<HTMLDivElement>(null);
+  const [sizeDropdownPos, setSizeDropdownPos] = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null);
+
+  const openSizeDropdown = () => {
+    const r = sizeTriggerRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const spaceBelow = window.innerHeight - r.bottom;
+    if (spaceBelow < 160 && r.top > spaceBelow)
+      setSizeDropdownPos({ bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width });
+    else
+      setSizeDropdownPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  };
 
   const inputCls = "bg-base border border-gold-500/30 rounded-md px-2 text-xs text-gold-400 w-full outline-none focus:border-gold-500/50 caret-gold-500";
   const inputLineCls = `${inputCls} h-9 py-2`;
 
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/60" onClick={onClose} />
+  return (
+    <Modal isOpen={true} onClose={handleClose}>
       <div className="relative bg-surface border border-gold-500/20 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+
+        {/* Discard confirmation overlay */}
+        {showConfirm && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-surface/90 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 p-6 text-center">
+              <p className="text-gold-300 font-semibold text-sm">Discard changes?</p>
+              <p className="text-gold-600 text-xs">You have unsaved changes. They will be lost if you close now.</p>
+              <div className="flex gap-2">
+                <button className="px-4! h-8! text-xs! border-gold-500/30! text-gold-500!" onClick={() => setShowConfirm(false)}>Keep editing</button>
+                <button className="px-4! h-8! text-xs! bg-[#ef4444]/10! border-[#ef4444]! text-[#ef4444]! hover:bg-[#ef4444]/20!" onClick={onClose}>Discard</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gold-500/20 shrink-0">
-          <h2 className="text-gold-300 font-semibold text-sm flex-1">{isNew ? "New Race" : "Edit Race"}</h2>
+          <h2 className="text-gold-300 font-semibold text-sm flex-1">{isNew ? "New Specie" : "Edit Specie"}</h2>
           <div className="flex gap-1">
             {(["ft","m"] as const).map(u => (
               <button key={u} type="button"
                 className={`px-2.5 py-1 text-[10px] font-semibold rounded-md border transition-colors ${race.unit === u ? "border-gold-500 text-gold-400 bg-gold-500/10" : "border-gold-500/20 text-gold-600 hover:border-gold-500/40"}`}
-                onClick={() => patch({ unit: u })}
+                onClick={() => {
+                  if (race.unit === u) return;
+                  const toM = u === "m";
+                  patch({
+                    unit: u,
+                    movements: race.movements.map(m => ({
+                      ...m,
+                      value: toM
+                        ? Math.round(m.value * 0.3048 * 10) / 10
+                        : Math.round(m.value / 0.3048),
+                    })),
+                  });
+                }}
               >{u}</button>
             ))}
           </div>
-          <button className="w-7! h-7! min-w-0! p-0! bg-transparent! border-0! text-gold-600! hover:text-gold-400!" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         {/* Scrollable body */}
@@ -1087,34 +1202,49 @@ function RaceModal({ race: initial, isNew, stats, onSave, onClose }: {
           {/* ── Identity ── */}
           <ModalSection title="Identity">
             <div className="flex flex-col gap-3">
-              <Field label="Name">
-                <input className={inputLineCls} value={race.name} onChange={e => patch({ name: e.target.value })} placeholder="e.g. Human, Elf, Dwarf…" />
-              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Size">
-                  <div className="relative">
-                    <div
-                      className={`${inputLineCls} flex items-center justify-between cursor-pointer select-none`}
-                      onClick={() => setSizeOpen(v => !v)}
-                    >
-                      <span>{race.size.charAt(0).toUpperCase() + race.size.slice(1)}</span>
-                      <ChevronDown className="h-3 w-3 text-gold-600 shrink-0" />
-                    </div>
-                    {sizeOpen && (
-                      <Dropdown className="w-full">
-                        {(["tiny","small","medium","large"] as const).map(s => (
-                          <Option key={s} onClick={() => { patch({ size: s }); setSizeOpen(false); }}>
-                            <span className={`text-xs ${race.size === s ? "text-gold-300" : "text-gold-500"}`}>
-                              {s.charAt(0).toUpperCase() + s.slice(1)}
-                            </span>
-                          </Option>
-                        ))}
-                      </Dropdown>
-                    )}
-                  </div>
+                <Field label="Name">
+                  <input className={inputLineCls} value={race.name} onChange={e => patch({ name: e.target.value })} placeholder="e.g. Human, Elf, Dwarf…" />
                 </Field>
-                <Field label="Starting Languages">
-                  <input className={inputLineCls} value={race.startingLanguages} onChange={e => patch({ startingLanguages: e.target.value })} placeholder="Common, Elvish…" />
+                <Field label="Size">
+                  <div
+                    ref={sizeTriggerRef}
+                    className={`${inputLineCls} flex items-center gap-1.5 flex-wrap cursor-pointer select-none`}
+                    onClick={openSizeDropdown}
+                  >
+                    {race.size.length ? race.size.map(s => (
+                      <span key={s} className="inline-flex items-center gap-1 rounded-full px-2 py-px text-[10px] font-medium bg-gold-500/15 text-gold-300 border border-gold-500/30">
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                        <span className="text-gold-600">({SIZE_DATA[s]?.[race.unit]})</span>
+                      </span>
+                    )) : <span className="text-gold-700">None</span>}
+                    <ChevronDown className="h-3 w-3 text-gold-600 shrink-0 ml-auto" />
+                  </div>
+                  {sizeDropdownPos && createPortal(
+                    <>
+                      <div className="fixed inset-0 z-[998]" onClick={() => setSizeDropdownPos(null)} />
+                      <div
+                        style={{ position: "fixed", top: sizeDropdownPos.top, bottom: sizeDropdownPos.bottom, left: sizeDropdownPos.left, width: sizeDropdownPos.width, zIndex: 999 }}
+                        className="bg-surface border border-gold-500/40 rounded-lg overflow-hidden shadow-xl"
+                      >
+                        {(Object.keys(SIZE_DATA) as Array<keyof typeof SIZE_DATA>).map(s => {
+                          const active = race.size.includes(s as never);
+                          return (
+                            <div
+                              key={s}
+                              className={`px-3 py-2 cursor-pointer text-xs flex items-center gap-2 hover:bg-gold-500/10 transition-colors ${active ? "text-gold-300" : "text-gold-500"}`}
+                              onClick={() => patch({ size: active ? race.size.filter(x => x !== s) : [...race.size, s] } as Partial<RulesetSpecie>)}
+                            >
+                              {active ? <Check className="h-3 w-3 shrink-0" /> : <span className="w-3 shrink-0" />}
+                              <span className="flex-1">{s.charAt(0).toUpperCase() + s.slice(1)}</span>
+                              <span className="text-gold-700 text-[10px]">({SIZE_DATA[s][race.unit]})</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>,
+                    document.body
+                  )}
                 </Field>
               </div>
               <Field label="Description">
@@ -1123,7 +1253,7 @@ function RaceModal({ race: initial, isNew, stats, onSave, onClose }: {
                   rows={3}
                   value={race.description}
                   onChange={e => patch({ description: e.target.value })}
-                  placeholder="Describe this race…"
+                  placeholder="Describe this specie…"
                 />
               </Field>
             </div>
@@ -1131,91 +1261,167 @@ function RaceModal({ race: initial, isNew, stats, onSave, onClose }: {
 
           {/* ── Movement Speeds ── */}
           <ModalSection title="Movement Speeds">
-            <div className="grid grid-cols-2 gap-2">
-              {([["Walk","movementWalk"],["Fly","movementFly"],["Swim","movementSwim"],["Climb","movementClimb"],["Burrow","movementBurrow"]] as const).map(([label, key]) => {
-                const val = race[key];
-                const set = (v: number) => patch({ [key]: Math.max(0, v) });
-                return (
-                  <CounterCardInput
-                    label={label}
-                    unitLabel={unitLabel}
-                    val={val}
-                    set={set}
+            <div className="flex flex-wrap gap-2">
+              {race.movements.map((mov, i) => (
+                <div key={i} className="flex flex-1 basis-40 items-center justify-between gap-2 border border-gold-500/20 rounded-lg p-1 px-2">
+                  <input
+                    className="flex-1 min-w-0 bg-transparent text-gold-500 text-xs font-bold tracking-wider outline-none placeholder:text-gold-700 caret-gold-500"
+                    value={mov.label}
+                    onChange={e => {
+                      const updated = race.movements.map((m, j) => j === i ? { ...m, label: e.target.value } : m);
+                      patch({ movements: updated });
+                    }}
+                    placeholder="Walk, Fly…"
                   />
-                );
-              })}
-            </div>
-          </ModalSection>
-
-          {/* ── Ability Score Modifiers ── */}
-          <ModalSection title="Ability Score Modifiers">
-            {stats.length === 0 ? (
-              <p className="text-gold-700 text-xs">No stats defined in this ruleset yet.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {stats.map(stat => {
-                  const val = race.statModifiers[stat.key] ?? 0;
-                  const set = (v: number) => patch({ statModifiers: { ...race.statModifiers, [stat.key]: v } });
-                  return (
-                    <CounterCardInput
-                      label={stat.label}
-                      unitLabel={unitLabel}
-                      val={val}
-                      set={set}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <NumberInput
+                      value={mov.value}
+                      onChange={v => {
+                        const updated = race.movements.map((m, j) => j === i ? { ...m, value: v } : m);
+                        patch({ movements: updated });
+                      }}
+                      min={0}
+                      suffix={unitLabel}
+                      className="w-20"
                     />
-                  );
-                })}
-              </div>
-            )}
+                    <button
+                      type="button"
+                      className="w-6! h-6! min-w-0! p-0! bg-transparent! border-0! text-gold-700! hover:text-[#ef4444]! shrink-0"
+                      onClick={() => patch({ movements: race.movements.filter((_, j) => j !== i) })}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border! border-dashed! border-gold-500/20! rounded-lg! text-gold-600! hover:text-gold-400! hover:border-gold-500/40!"
+                onClick={() => patch({ movements: [...race.movements, { label: "", value: 0 }] })}
+              >
+                <Plus className="h-3 w-3" /> Add Movement
+              </button>
+            </div>
           </ModalSection>
 
-          {/* ── Senses ── */}
-          <ModalSection title="Senses">
-            <div className="grid grid-cols-2 gap-3">
-              <CounterCardInput
-                label={"Darkvision"}
-                unitLabel={unitLabel}
-                val={race.darkvision}
-                set={v => patch({ darkvision: v })}
-              />
-              <Field label="Other Senses">
-                <input className={inputLineCls} value={race.otherSenses} onChange={e => patch({ otherSenses: e.target.value })} placeholder="Tremorsense, Blindsight…" />
-              </Field>
+          {/* ── Traits ── */}
+          <ModalSection title="Traits">
+            <div className="flex flex-col gap-2">
+              {race.traitIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {race.traitIds.map(id => {
+                    const trait = availableTraits.find(t => t.id === id);
+                    if (!trait) return null;
+                    return (
+                      <span key={id} className="inline-flex items-center gap-1 rounded-full px-2.5 py-px text-xs font-medium bg-gold-500/15 text-gold-300 border border-gold-500/30">
+                        {trait.name || <span className="italic text-gold-600">Unnamed</span>}
+                        <button
+                          type="button"
+                          className="border-0! bg-transparent! p-0! min-w-0! w-auto! h-auto! shrink-0 opacity-60 hover:opacity-100 text-gold-300!"
+                          onClick={() => patch({ traitIds: race.traitIds.filter(i => i !== id) })}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              <button
+                type="button"
+                className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border! border-dashed! border-gold-500/20! rounded-lg! text-gold-600! hover:text-gold-400! hover:border-gold-500/40!"
+                onClick={() => setTraitPickerOpen(true)}
+              >
+                <Plus className="h-3 w-3" /> Add Trait
+              </button>
             </div>
+            {traitPickerOpen && (
+              <TraitPickerModal
+                availableTraits={availableTraits}
+                selectedIds={race.traitIds}
+                onToggle={id => patch({ traitIds: race.traitIds.includes(id) ? race.traitIds.filter(i => i !== id) : [...race.traitIds, id] })}
+                onCreate={name => {
+                  const id = onCreateTrait(name);
+                  patch({ traitIds: [...race.traitIds, id] });
+                }}
+                onClose={() => setTraitPickerOpen(false)}
+              />
+            )}
           </ModalSection>
 
           {/* ── Resistances & Immunities ── */}
           <ModalSection title="Resistances & Immunities">
             <div className="flex flex-col gap-3">
-              <Field label="Damage Resistances">
-                <input className={inputLineCls} value={race.damageResistances} onChange={e => patch({ damageResistances: e.target.value })} placeholder="Fire, Cold…" />
-              </Field>
-              <Field label="Damage Immunities">
-                <input className={inputLineCls} value={race.damageImmunities} onChange={e => patch({ damageImmunities: e.target.value })} placeholder="Poison…" />
-              </Field>
-              <Field label="Condition Immunities">
-                <input className={inputLineCls} value={race.conditionImmunities} onChange={e => patch({ conditionImmunities: e.target.value })} placeholder="Charmed, Frightened…" />
-              </Field>
-              <Field label="Damage Vulnerabilities">
-                <input className={inputLineCls} value={race.damageVulnerabilities} onChange={e => patch({ damageVulnerabilities: e.target.value })} placeholder="Bludgeoning…" />
-              </Field>
+              {RESISTANCE_SECTIONS.filter(s => activeSections.has(s.key)).map(({ key, label }) => (
+                <div key={key} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gold-500 text-[11px] font-semibold">{label}</span>
+                    <button
+                      type="button"
+                      className="w-5! h-5! min-w-0! p-0! bg-transparent! border-0! text-gold-700! hover:text-[#ef4444]! shrink-0"
+                      onClick={() => {
+                        setActiveSections(s => { const n = new Set(s); n.delete(key); return n; });
+                        patch({ [key]: [] });
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <TagInput value={race[key]} onChange={v => patch({ [key]: v })} />
+                </div>
+              ))}
+              {activeSections.size < RESISTANCE_SECTIONS.length && (
+                <button
+                  ref={addSectionBtnRef}
+                  type="button"
+                  className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border! border-dashed! border-gold-500/20! rounded-lg! text-gold-600! hover:text-gold-400! hover:border-gold-500/40!"
+                  onClick={() => {
+                    const r = addSectionBtnRef.current?.getBoundingClientRect();
+                    if (r) setSectionPickerPos({ top: r.bottom + 4, left: r.left, width: r.width });
+                  }}
+                >
+                  <Plus className="h-3 w-3" /> Add section
+                </button>
+              )}
             </div>
+            {sectionPickerPos && createPortal(
+              <>
+                <div className="fixed inset-0 z-998" onClick={() => setSectionPickerPos(null)} />
+                <div
+                  style={{ position: "fixed", top: sectionPickerPos.top, left: sectionPickerPos.left, width: sectionPickerPos.width, zIndex: 999 }}
+                  className="bg-surface border border-gold-500/40 rounded-lg overflow-hidden shadow-xl"
+                >
+                  {RESISTANCE_SECTIONS.filter(s => !activeSections.has(s.key)).map(({ key, label }) => (
+                    <div
+                      key={key}
+                      className="px-3 py-2 cursor-pointer text-xs text-gold-400 hover:bg-gold-500/10 hover:text-gold-300 transition-colors"
+                      onClick={() => {
+                        setActiveSections(s => new Set([...s, key]));
+                        setSectionPickerPos(null);
+                      }}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </>,
+              document.body
+            )}
           </ModalSection>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-gold-500/20 shrink-0">
-          <button className="px-4! h-8! text-xs! border-gold-500/30! text-gold-500!" onClick={onClose}>Cancel</button>
+          <button className="px-4! h-8! text-xs! border-gold-500/30! text-gold-500!" onClick={handleClose}>Cancel</button>
           <button
             className="px-4! h-8! text-xs! bg-gold-500! text-gray-900! border-gold-500! hover:bg-gold-400! hover:border-gold-400!"
             onClick={() => onSave(race)}
           >
-            {isNew ? "Add Race" : "Save"}
+            {isNew ? "Add Specie" : "Save"}
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }
 
@@ -1377,11 +1583,160 @@ function SkillCard({ skill, stats, onUpdate, onDelete, onDuplicate, focusOnMount
   );
 }
 
-function CounterCardInput(
-  { label, unitLabel, val, set }: { label: string; unitLabel: string; val: number; set: (v: number) => void }
-) {
-  return (<div className="flex flex-row items-center justify-between gap-1 border border-gold-500/20 rounded-lg p-1 px-2">
-    <span className="text-gold-500 text-[10px] font-bold uppercase tracking-wider text-center">{label} ({unitLabel})</span>
-    <CounterInput value={val} onChange={v => set(v)} min={0} className="h-9" />
-  </div>)
+
+function TraitPickerModal({ availableTraits, selectedIds, onToggle, onCreate, onClose }: {
+  availableTraits: RulesetSpecieTrait[];
+  selectedIds: string[];
+  onToggle: (id: string) => void;
+  onCreate: (name: string) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 30);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const filtered = availableTraits.filter(t =>
+    t.name.toLowerCase().includes(query.toLowerCase())
+  );
+  const canCreate = query.trim() !== "" && !availableTraits.some(t => t.name.toLowerCase() === query.trim().toLowerCase());
+
+  return createPortal(
+    <div className="fixed inset-0 z-200 backdrop-blur-lg flex items-center justify-center p-4" onClick={onClose}>
+      <div className="relative flex flex-col items-center gap-2" onClick={e => e.stopPropagation()}>
+        <div className="w-130 bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 overflow-hidden">
+          <input
+            ref={inputRef}
+            className="w-full h-14 text-xl border-none! bg-transparent! text-gold-300 outline-none px-4 placeholder:text-gold-700 caret-gold-500"
+            placeholder="Search traits…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          <div className="max-h-64 overflow-y-auto border-t border-gold-500/20">
+            {filtered.length === 0 && !canCreate && (
+              <p className="text-gold-700 text-xs px-4 py-3">No traits found.</p>
+            )}
+            {filtered.map(trait => {
+              const active = selectedIds.includes(trait.id);
+              return (
+                <div
+                  key={trait.id}
+                  className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gold-500/10 transition-colors ${active ? "bg-gold-500/10" : ""}`}
+                  onClick={() => onToggle(trait.id)}
+                >
+                  <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${active ? "bg-gold-500 border-gold-500" : "border-gold-500/30"}`}>
+                    {active && <Check className="h-3 w-3 text-gray-900" />}
+                  </span>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className={`text-sm font-medium ${active ? "text-gold-300" : "text-gold-400"}`}>
+                      {trait.name || <span className="italic text-gold-700">Unnamed</span>}
+                    </span>
+                    {trait.description && (
+                      <span className="text-gold-600 text-xs truncate">{trait.description}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {canCreate && (
+          <button
+            className="flex items-center gap-1.5 text-sm px-3!"
+            onClick={() => { onCreate(query.trim()); setQuery(""); onClose(); }}
+          >
+            <Plus className="h-3 w-3" /> Create "{query.trim()}"
+          </button>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function TraitCard({ trait, onUpdate, onDelete }: {
+  trait: RulesetSpecieTrait;
+  onUpdate: (p: Partial<RulesetSpecieTrait>) => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="border border-gold-500/20 rounded-lg overflow-hidden">
+      <div className="flex items-center gap-0.5 px-1.5 py-2 bg-surface/40">
+        <button
+          className="w-4! h-4! min-w-0! p-0! bg-transparent! border-0! outline-none! ring-0! active:ring-0! text-gold-600! hover:text-gold-400! shrink-0"
+          onClick={() => setOpen(v => !v)}
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        </button>
+        <input
+          className="bg-transparent outline-none border-0 text-gold-300 text-sm font-medium leading-snug flex-1 p-0 m-0 placeholder:text-gold-700/50"
+          value={trait.name}
+          onChange={e => onUpdate({ name: e.target.value })}
+          placeholder="Trait name…"
+        />
+        <button
+          className="w-6! h-6! min-w-0! p-0! shrink-0 bg-transparent! border-0! outline-none! ring-0! active:ring-0! text-gold-700! hover:text-[#ef4444]!"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className={`grid transition-all duration-200 ease-in-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <div className="overflow-hidden">
+          <div className="px-3 py-3 bg-base/60 border-t border-gold-500/20">
+            <textarea
+              className="bg-transparent outline-none border-0 text-gold-600 text-[11px] w-full resize-none leading-relaxed p-0 m-0 placeholder:text-gold-700/40 overflow-y-auto max-h-40"
+              style={{ fieldSizing: "content" } as React.CSSProperties}
+              value={trait.description}
+              onChange={e => onUpdate({ description: e.target.value })}
+              placeholder="Describe this trait…"
+              rows={1}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TagInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [input, setInput] = useState("");
+
+  const add = () => {
+    const trimmed = input.trim();
+    if (!trimmed || value.includes(trimmed)) return;
+    onChange([...value, trimmed]);
+    setInput("");
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 border border-gold-500/20 rounded-lg p-1.5 min-h-8">
+      {value.map((v, i) => (
+        <span key={i} className="inline-flex items-center gap-1 rounded-full px-2.5 py-px text-xs font-medium bg-gold-500/15 text-gold-300 border border-gold-500/30">
+          {v}
+          <button
+            type="button"
+            className="border-0! bg-transparent! p-0! min-w-0! w-auto! h-auto! shrink-0 opacity-60 hover:opacity-100 text-gold-300!"
+            onClick={() => onChange(value.filter((_, j) => j !== i))}
+          >
+            <X className="h-2.5 w-2.5" />
+          </button>
+        </span>
+      ))}
+      <input
+        className="flex-1 min-w-24 bg-transparent text-xs text-gold-400 outline-none caret-gold-500 placeholder:text-gold-700"
+        value={input}
+        placeholder="Type and press Enter…"
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+      />
+    </div>
+  );
 }

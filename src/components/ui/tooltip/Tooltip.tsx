@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import ReactMarkdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import { Markdown } from "../Markdown";
 
 export default function Tooltip({ children, text, title, badge, className }: { children: React.ReactNode; text: string; title?: string; badge?: string; className?: string }) {
   const [visible, setVisible] = useState(false);
@@ -54,9 +53,7 @@ export default function Tooltip({ children, text, title, badge, className }: { c
               {badge && <span className="text-gold-600 text-[9px] font-semibold uppercase tracking-wider">{badge}</span>}
             </div>
           )}
-          <div className="text-[10px] text-gold-600 leading-snug [&>p]:leading-snug [&>p]:mb-2 [&>p:last-child]:mb-0 [&_li]:leading-snug [&_li_p]:my-0 [&_strong]:text-gold-400 [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ul]:pl-3 [&_h1]:text-gold-300 [&_h1]:font-bold [&_h2]:text-gold-400 [&_h2]:font-semibold">
-            <ReactMarkdown remarkPlugins={[remarkBreaks]}>{text}</ReactMarkdown>
-          </div>
+          <Markdown className="text-[10px]">{text}</Markdown>
         </div>,
         document.body
       )}
