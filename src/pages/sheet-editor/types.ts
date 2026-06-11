@@ -59,6 +59,7 @@ export interface TextInputSettings extends NodeSettings {
   label: string;
   placeholder: string;
   width: number; // percentage, 0 = full width
+  multiline: boolean;
 }
 
 export interface LevelCountSettings extends NodeSettings {
@@ -72,6 +73,7 @@ export interface StaticCounterSettings extends NodeSettings {
   value: string;   // handlebar expression
   direction: "vertical" | "horizontal";
   shieldView: boolean;
+  showSign: boolean;
   width: number;   // percentage, 0 = auto
   height: number;  // px, 0 = auto
 }
@@ -175,7 +177,7 @@ export function createTextInputNode(label = "Label"): LayoutNode {
   return {
     id: crypto.randomUUID(),
     type: "text-input",
-    settings: { label, placeholder: "", width: 0, padding: 0, gap: 0 } satisfies TextInputSettings,
+    settings: { label, placeholder: "", width: 0, multiline: false, padding: 0, gap: 0 } satisfies TextInputSettings,
     children: [],
   };
 }
@@ -202,7 +204,7 @@ export function createStaticCounterNode(): LayoutNode {
   return {
     id: crypto.randomUUID(),
     type: "static-counter",
-    settings: { label: "Label", value: "", direction: "vertical", shieldView: false, width: 0, height: 0, padding: 0, gap: 0 } satisfies StaticCounterSettings,
+    settings: { label: "Label", value: "", direction: "vertical", shieldView: false, showSign: false, width: 0, height: 0, padding: 0, gap: 0 } satisfies StaticCounterSettings,
     children: [],
   };
 }

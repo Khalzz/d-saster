@@ -60,11 +60,11 @@ export function SheetPreview({ nodes, selectedIds, onSelect, onContextMenu, node
   return (
     <SheetTreeContext.Provider value={nodes}>
       <div
-        className="flex-1 overflow-y-auto bg-base"
+        className="flex-1  bg-base"
         onClick={() => onSelect(null)}
       >
-        <div className="max-w-4xl mx-auto bg-surface border-x h-full border-gold-500/10 ">
-          <div className="p-6 flex flex-col gap-4">
+        <div className="max-w-4xl mx-auto bg-surface border-x h-full border-gold-500/10 overflow-auto">
+          <div className="p-6 flex flex-col gap-4 ">
             {nodes.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-2">
                 <LayoutPanelTop className="h-8 w-8 text-gold-700" />

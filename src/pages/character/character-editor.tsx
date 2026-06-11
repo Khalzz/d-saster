@@ -122,7 +122,7 @@ export default function CharacterEditor() {
   };
 
   return (
-    <main className="h-full min-h-screen bg-base flex flex-col">
+    <main className="h-screen bg-base flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 shrink-0">
         <button className="w-9! h-9! flex items-center justify-center shrink-0" onClick={() => navigate(-1)}>
@@ -212,7 +212,7 @@ export default function CharacterEditor() {
       <div className="border-b border-gold-500/20 shrink-0" />
 
       {/* Body — interactive sheet */}
-      <div className="flex-1 overflow-y-scroll max-w-4xl mx-auto w-full bg-surface border-x border-gold-500/30">
+      <div className="flex-1 max-w-4xl mx-auto w-full bg-surface border-x border-gold-500/30  overflow-auto">
         <CharacterSheetView
           char={char}
           onChange={(patch) => setChar(c => ({ ...c, ...patch }))}

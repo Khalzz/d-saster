@@ -362,6 +362,10 @@ struct RulesetData {
     traits: Vec<serde_json::Value>,
     #[serde(default)]
     species: Vec<serde_json::Value>,
+    #[serde(default, alias = "terms")]
+    rules: Vec<serde_json::Value>,
+    #[serde(default)]
+    rule_categories: Vec<String>,
 }
 
 fn rulesets_dir() -> Result<PathBuf, String> {

@@ -95,6 +95,18 @@
     @apply bg-base border border-gold-500/30 rounded-md px-3 py-2 text-gold-200 text-sm outline-none transition-colors w-full h-8 focus:border-gold-500/60;
   }
 
+  textarea {
+    @apply bg-base border border-gold-500/30 rounded-md px-3 py-2 text-gold-200 text-sm outline-none transition-colors w-full focus:border-gold-500/60 resize-none;
+  }
+
+  [data-glossary] {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: var(--color-gold-600);
+    text-underline-offset: 3px;
+    cursor: help;
+  }
+
   input[type="number"] {
     appearance: textfield;
   }

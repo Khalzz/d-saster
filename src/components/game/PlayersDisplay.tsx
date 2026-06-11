@@ -139,7 +139,7 @@ function CharacterInfoCard({ character, rulesets, classes }: {
   const selectedClass = activeClasses.find(c => c.id === character.classId);
 
   const modifierFormula = ruleset?.modifierFormula;
-  const savingThrowFormula = ruleset?.savingThrowFormula || "{{stat_mod}}";
+  const savingThrowFormula = "{{stat_mod}}";
   const skillFormula = ruleset?.skillFormula;
   const skills = ruleset?.skills ?? [];
 

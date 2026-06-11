@@ -8,7 +8,13 @@ export function StaticCounterNode({ node, useSheet }: { node: LayoutNode; useShe
   const { vars } = useSheet();
   const direction = s.direction ?? "vertical";
 
-  const resolved = s.value ? evalFormula(s.value, vars) : "";
+  const raw = s.value ? evalFormula(s.value, vars) : "";
+  const resolved = (() => {
+    if (!raw || !s.showSign) return raw;
+    const n = Number(raw);
+    if (isNaN(n) || raw.trim() === "") return raw;
+    return n > 0 ? `+${raw}` : raw;
+  })();
 
   return (
     <StaticCounterBox

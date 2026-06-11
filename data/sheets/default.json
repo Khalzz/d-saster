@@ -12,12 +12,12 @@
               "settings": {
                 "alt": "",
                 "gap": 0,
-                "height": 0,
+                "height": 50,
                 "objectFit": "cover",
                 "padding": 0,
                 "squared": true,
                 "src": "",
-                "width": 35
+                "width": 32
               },
               "type": "image"
             },
@@ -218,14 +218,34 @@
               "children": [
                 {
                   "children": [],
-                  "id": "9dcb0381-6f75-4ac2-9dad-3d56bbe44f0d",
+                  "id": "13587f34-6c26-4bd2-8f99-833f253eb00c",
                   "settings": {
-                    "formula": "Math.floor(({{level}} - 1) / 4) + 2",
+                    "direction": "horizontal",
                     "gap": 0,
+                    "height": 0,
+                    "label": "Proficiency Bonus",
                     "padding": 0,
+                    "shieldView": true,
+                    "showSign": true,
+                    "value": "Math.floor(({{level}} - 1) / 4) + 2",
                     "width": 0
                   },
-                  "type": "proficiency-bonus"
+                  "type": "static-counter"
+                },
+                {
+                  "children": [],
+                  "id": "b223c976-8f02-4807-9d94-c4e5bea1bc3e",
+                  "settings": {
+                    "direction": "horizontal",
+                    "gap": 0,
+                    "height": 0,
+                    "label": "Heroic Inspiration",
+                    "padding": 0,
+                    "shieldView": true,
+                    "value": "0",
+                    "width": 0
+                  },
+                  "type": "static-counter"
                 },
                 {
                   "children": [
@@ -347,6 +367,72 @@
                     "gap": 8,
                     "padding": 8,
                     "title": "Features & Traits",
+                    "width": 0
+                  },
+                  "type": "section"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "432a2853-c858-4f71-80b4-2dda710324f5",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Ideals",
+                        "multiline": true,
+                        "padding": 0,
+                        "placeholder": "",
+                        "width": 0
+                      },
+                      "type": "text-input"
+                    },
+                    {
+                      "children": [],
+                      "id": "621c777d-e377-4a11-be34-f11c6c013d81",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Bonds",
+                        "multiline": true,
+                        "padding": 0,
+                        "placeholder": "",
+                        "width": 0
+                      },
+                      "type": "text-input"
+                    },
+                    {
+                      "children": [],
+                      "id": "cff46750-3f8c-4b13-ad11-8b5d080f913b",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Personality Traits",
+                        "multiline": true,
+                        "padding": 0,
+                        "placeholder": "",
+                        "width": 0
+                      },
+                      "type": "text-input"
+                    },
+                    {
+                      "children": [],
+                      "id": "1b626bca-75e9-4228-b1c2-53c9a992548a",
+                      "settings": {
+                        "gap": 0,
+                        "label": "Flaws",
+                        "multiline": true,
+                        "padding": 0,
+                        "placeholder": "",
+                        "width": 0
+                      },
+                      "type": "text-input"
+                    }
+                  ],
+                  "id": "60675aff-f291-48e9-bb64-08dce241bdc6",
+                  "settings": {
+                    "description": "",
+                    "direction": "column",
+                    "gap": 8,
+                    "padding": 8,
+                    "title": "Character essence",
                     "width": 0
                   },
                   "type": "section"

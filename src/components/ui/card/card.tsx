@@ -1,7 +1,8 @@
-export default function Card({ children, className, title }: { children: React.ReactNode, className?: string, title?: string }) {
+export default function Card({ children, className, title, onClick }: { children: React.ReactNode, className?: string, title?: string, onClick?: () => void }) {
   return (
     <div
-      className={`relative bg-surface border border-gold-500/30 rounded-lg p-2 text-gold-500 overflow-auto ${className}`}
+      onClick={onClick}
+      className={`relative bg-surface border border-gold-500/30 rounded-lg p-2 text-gold-500 overflow-auto ${className ?? ""}`}
       style={title ? { overflow: "visible" } : undefined}
     >
       {title && (

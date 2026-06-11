@@ -4,7 +4,7 @@
   "description": "",
   "modifierFormula": "({{stat_points}} - 10) / 2",
   "skillFormula": "{{stat_mod}} + {{proficiency_bonus}}",
-  "savingThrowFormula": "{{stat_mod}} + {{proficiency_bonus}}",
+  "savingThrowFormula": "",
   "maxLevel": 0,
   "stats": [
     {
@@ -42,19 +42,13 @@
     {
       "id": "a643ef55-b047-4c94-830e-34ee29b33db2",
       "name": "Barbarian",
-      "description": "A **warrior powered by rage** that unlocks his true capacities, mainly a active user of **brute force** developed by his **low usage of reason**, good at **carrying heavy stuff**, **destroying hard stuff** and **generating fear** on his enemies.",
+      "description": "A **warrior powered by rage** that unlocks hisood at **carrying heavy stuff**, **destroying hard stuff** and **generating fear** on his en true capacities, mainly a active user of **brute force** developed by his **low usage of reason**, gemies.",
       "modifiers": []
     },
     {
       "id": "9a4a02b0-495c-409a-a434-d920364a38fa",
       "name": "Rogue",
       "description": "A stealth agent, dedicated to being agile, not so strong but having a great ability of hiding in plain view, silent, agile and efficient.",
-      "modifiers": []
-    },
-    {
-      "id": "231fa5ec-0490-49bf-81f7-18ed19a561e4",
-      "name": "Wizard",
-      "description": "he launches stuff **very hard**",
       "modifiers": []
     }
   ],
@@ -170,19 +164,60 @@
   ],
   "traits": [
     {
-      "description": "You gain **Heroic Inspiration** whenever you finish a Long Rest.",
+      "description": "You gain **Heroic Inspiration** whenever you **finish a Long Rest**.",
+      "fields": [],
       "id": "5635204b-7d4f-4dc1-a67a-224acbc1cbf6",
       "name": "Resourceful"
     },
     {
-      "description": "You gain proficiency in one skill of your choice.",
+      "description": "You gain **proficiency** in **one skill** of your choice.",
+      "fields": [],
       "id": "4394682a-daa4-4083-8f82-1fde1cc95704",
       "name": "Skillful"
     },
     {
-      "description": "You gain an Origin feat of your choice.",
+      "description": "You **gain** an **Origin feat** of your choice.",
+      "fields": [],
       "id": "c00a59e8-c93b-456a-bd52-6dcfcb4974b6",
       "name": "Versatile"
+    },
+    {
+      "description": "You have **Darkvision** with a range of **{{distance}} feet**.",
+      "fields": [
+        {
+          "id": "84623bdb-f3a9-4dbf-a67f-1d03dcfeab94",
+          "label": "Distance"
+        }
+      ],
+      "id": "5e23bbdd-1725-4b3b-9a78-5be545af82cb",
+      "name": "Darkvision"
+    },
+    {
+      "description": "You have **Resistance to Poison damage**. You also have **Advantage on saving throws you make to avoid or end the Poisoned condition**.",
+      "fields": [],
+      "id": "05ca9521-ce6e-4337-858e-408aadeadd1d",
+      "name": "Dwarven Resilience"
+    },
+    {
+      "description": "Your **Hit Point maximum increases by 1**, and **it increases by 1** again **whenever you gain a level**.",
+      "fields": [],
+      "id": "26f2a282-7acd-4779-ba40-2585fb764a6d",
+      "name": "Dwarven Toughness"
+    },
+    {
+      "description": "As a Bonus Action, you gain **Tremorsense** with a range of **{{distance}} feet** for **{{time}} minutes**. You **must be on a stone surface or touching a stone surface to use this Tremorsense**. The stone can be natural or worked.\n\n**You can use this Bonus Action a number of times equal to your Proficiency Bonus**, and you regain all expended uses **when you finish a Long Rest**.",
+      "fields": [
+        {
+          "id": "f1132786-e0d4-4983-bdaf-204bb2980d0a",
+          "label": "distance"
+        },
+        {
+          "id": "ac1390c7-2eda-4649-8b61-34c517928ab3",
+          "label": "time"
+        }
+      ],
+      "id": "6e3025cc-80ba-4650-9b53-93061fd54c78",
+      "name": "Stonecunning"
     }
   ],
   "species": [
@@ -214,12 +249,86 @@
         "small"
       ],
       "statModifiers": {},
+      "traitAssignments": [
+        {
+          "traitId": "4394682a-daa4-4083-8f82-1fde1cc95704",
+          "values": {}
+        },
+        {
+          "traitId": "5635204b-7d4f-4dc1-a67a-224acbc1cbf6",
+          "values": {}
+        },
+        {
+          "traitId": "c00a59e8-c93b-456a-bd52-6dcfcb4974b6",
+          "values": {}
+        }
+      ],
       "traitIds": [
         "4394682a-daa4-4083-8f82-1fde1cc95704",
         "5635204b-7d4f-4dc1-a67a-224acbc1cbf6",
         "c00a59e8-c93b-456a-bd52-6dcfcb4974b6"
       ],
       "unit": "ft"
+    },
+    {
+      "conditionImmunities": [],
+      "damageImmunities": [],
+      "damageResistances": [],
+      "damageVulnerabilities": [],
+      "description": "Dwarves were raised from the earth in the elder days by a deity of the forge. Called by various names on different worlds—Moradin, Reorx, and others—that god gave dwarves an affinity for stone and metal and for living underground. The god also made them resilient like the mountains, with a life span of about 350 years.\n\nSquat and often bearded, the original dwarves carved cities and strongholds into mountainsides and under the earth. Their oldest legends tell of conflicts with the monsters of mountaintops and the Underdark, whether those monsters were towering giants or subterranean horrors. Inspired by those tales, dwarves of any culture often sing of valorous deeds—especially of the little overcoming the mighty.\n\nOn some worlds in the multiverse, the first settlements of dwarves were built in hills or mountains, and the families who trace their ancestry to those settlements call themselves hill dwarves or mountain dwarves, respectively. The Greyhawk and Dragonlance settings have such communities.",
+      "id": "988999f4-4701-4da7-a264-4a05d3b1f64d",
+      "movements": [
+        {
+          "label": "Walk",
+          "value": 30
+        }
+      ],
+      "name": "Dwarf",
+      "senses": [],
+      "size": [
+        "medium"
+      ],
+      "statModifiers": {},
+      "traitAssignments": [
+        {
+          "traitId": "5e23bbdd-1725-4b3b-9a78-5be545af82cb",
+          "values": {
+            "84623bdb-f3a9-4dbf-a67f-1d03dcfeab94": "120"
+          }
+        },
+        {
+          "traitId": "05ca9521-ce6e-4337-858e-408aadeadd1d",
+          "values": {}
+        },
+        {
+          "traitId": "26f2a282-7acd-4779-ba40-2585fb764a6d",
+          "values": {}
+        },
+        {
+          "traitId": "6e3025cc-80ba-4650-9b53-93061fd54c78",
+          "values": {
+            "ac1390c7-2eda-4649-8b61-34c517928ab3": "10",
+            "f1132786-e0d4-4983-bdaf-204bb2980d0a": "60"
+          }
+        }
+      ],
+      "unit": "ft"
     }
+  ],
+  "rules": [
+    {
+      "description": "If you **(a player character)** have **Heroic Inspiration**, you can **expend it to reroll any die immediately after rolling it**, and **you must use the new roll**.\n\nIf you gain Heroic Inspiration **but already have it**, it’s lost unless you give it to a player character who lacks it.\"",
+      "id": "be634607-fe6a-4779-a622-7083fe20d195",
+      "name": "Heroic Inspiration"
+    },
+    {
+      "category": "Condition",
+      "description": "While you have the **Incapacitated** condition, you experience the following effects.\n\n- **Inactive**: You **can’t take any action**, **Bonus Action**, or **Reaction**.\n\n- **No Concentration**: Your Concentration is broken.\n\n- **Speechless**: You can’t speak.\n\n- **Surprised**: If you’re Incapacitated **when you roll Initiative, you have Disadvantage on the roll**.",
+      "id": "d4ac34b7-0c6e-481f-81dd-00de6717cdb3",
+      "name": "Incapacitated"
+    }
+  ],
+  "ruleCategories": [
+    "Condition"
   ]
 }

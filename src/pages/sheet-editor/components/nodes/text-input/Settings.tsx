@@ -31,6 +31,25 @@ export function TextInputSettingsForm({ settings, onChange }: NodeSettingsProps)
         </Field>
       </div>
       <div className="mb-3">
+        <Field label="Input type">
+          <div className="flex rounded-md overflow-hidden border border-gold-500/30">
+            {(["Single line", "Textarea"] as const).map((opt) => {
+              const active = opt === "Textarea" ? s.multiline : !s.multiline;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => onChange({ multiline: opt === "Textarea" })}
+                  className={`flex-1! h-7! text-xs! rounded-none! border-0! border-r! last:border-r-0! border-gold-500/30!
+                    ${active ? "bg-gold-500/20! text-gold-300!" : "bg-transparent! text-gold-600!"}`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+      </div>
+      <div className="mb-3">
         <NumberField
           label="Width"
           value={s.width}

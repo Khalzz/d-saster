@@ -12,7 +12,8 @@ import { SpecieNode } from "../../../components/ui/character-sheet/nodes/specie-
 import { CountNode } from "../../../components/ui/character-sheet/nodes/count-node/count-node";
 import { ImageNode } from "../../../components/ui/character-sheet/nodes/image-node/image-node";
 import type { Ruleset, StatDefinition, RulesetSkill } from "../../ruleset/ruleset-editor";
-import { createContext, useContext, useEffect, useState } from "react";
+import { AutoTooltip, type GlossaryTerm } from "../../../components/ui/AutoTooltip";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Character, CharacterClass } from "../character-editor";
 import type { LayoutNode } from "../../sheet-editor/types";
 import { invoke } from "@tauri-apps/api/core";
@@ -114,6 +115,10 @@ export function CharacterSheetView({ char, onChange, ruleset, statDefs, skills, 
 
   const ctx: SheetContext = { char, onChange, ruleset, statDefs, skills, classes, onClassCreated, vars };
 
+  const glossaryTerms = useMemo<GlossaryTerm[]>(() =>
+    (ruleset?.rules ?? []).filter(t => t.name && t.description)
+  , [ruleset]);
+
   if (nodes.length === 0) {
     return (
       <div className="flex items-center justify-center py-12 text-gold-700 text-xs">
@@ -125,11 +130,11 @@ export function CharacterSheetView({ char, onChange, ruleset, statDefs, skills, 
   return (
     <SheetCtx.Provider value={ctx}>
       <TreeCtx.Provider value={nodes}>
-        <div className="flex flex-col gap-4 p-6">
+        <AutoTooltip terms={glossaryTerms} className="flex flex-col gap-4 p-6">
           {nodes.map((node) => (
             <InteractiveNode key={node.id} node={node} />
           ))}
-        </div>
+        </AutoTooltip>
       </TreeCtx.Provider>
     </SheetCtx.Provider>
   );
