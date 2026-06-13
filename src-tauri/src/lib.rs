@@ -321,6 +321,19 @@ struct RulesetClassModifier {
     value: i32,
 }
 
+#[derive(Serialize, Deserialize, Default)]
+struct RulesetSkillProficiencies {
+    count: u32,
+    options: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+struct RulesetClassLevelFeature {
+    level: u32,
+    #[serde(default, rename = "traitIds")]
+    trait_ids: Vec<String>,
+}
+
 #[derive(Serialize, Deserialize)]
 struct RulesetClass {
     id: String,
@@ -328,6 +341,16 @@ struct RulesetClass {
     #[serde(default)]
     description: String,
     modifiers: Vec<RulesetClassModifier>,
+    #[serde(default, rename = "primaryAbility")]
+    primary_ability: String,
+    #[serde(default, rename = "hitDie")]
+    hit_die: String,
+    #[serde(default, rename = "savingThrowProficiencies")]
+    saving_throw_proficiencies: Vec<String>,
+    #[serde(default, rename = "skillProficiencies")]
+    skill_proficiencies: RulesetSkillProficiencies,
+    #[serde(default, rename = "levelFeatures")]
+    level_features: Vec<RulesetClassLevelFeature>,
 }
 
 #[derive(Serialize, Deserialize)]

@@ -42,14 +42,103 @@
     {
       "id": "a643ef55-b047-4c94-830e-34ee29b33db2",
       "name": "Barbarian",
-      "description": "A **warrior powered by rage** that unlocks hisood at **carrying heavy stuff**, **destroying hard stuff** and **generating fear** on his en true capacities, mainly a active user of **brute force** developed by his **low usage of reason**, gemies.",
-      "modifiers": []
+      "description": "Barbarians are **mighty warriors** who are **powered by primal forces of the multiverse** that manifest as a **Rage**. More than a mere emotion—and not limited to anger—**this Rage is an incarnation of a predator’s ferocity, a storm’s fury, and a sea’s turmoil**.\n\nSome Barbarians **personify their Rage as a fierce spirit or revered forebear**. Others see it as **a connection to the pain and anguish of the world**, as **an impersonal tangle of wild magic**, or as **an expression of their own deepest self**. For every Barbarian, **their Rage is a power that fuels not just battle prowess, but also uncanny reflexes and heightened senses**.\n\nBarbarians often **serve as protectors and leaders in their communities**. They charge headlong into danger so those under their protection don’t have to. **Their courage in the face of danger makes Barbarians perfectly suited for adventure**.",
+      "modifiers": [],
+      "primaryAbility": "str",
+      "hitDie": "D12 per level",
+      "savingThrowProficiencies": [
+        "str",
+        "constitution"
+      ],
+      "skillProficiencies": {
+        "count": 2,
+        "options": [
+          "e3655bb1-2a98-43aa-8f07-8777e82da89a",
+          "ff7df345-68c2-4a25-9165-ca7db2913b75",
+          "9cc2969c-2e9d-4161-9bd8-569e90493ec6",
+          "b36982ef-5b27-45ac-af3c-e82ae306a5e2",
+          "aeab0004-bcff-482c-86f4-9ee35faff0ad"
+        ]
+      },
+      "levelFeatures": [
+        {
+          "level": 1,
+          "traitIds": [
+            "90030201-213f-42f9-acf6-3db11adebf8f",
+            "6eb9914f-6857-4984-ac9e-3c431b6b00a6",
+            "2b932c28-5f75-442f-9b61-b58f54885b74"
+          ]
+        },
+        {
+          "level": 2,
+          "traitIds": [
+            "178d32fa-c8b9-422b-a38e-70b011999cd3",
+            "4911217b-e737-4703-bdae-7f8878b77166"
+          ]
+        },
+        {
+          "level": 3,
+          "traitIds": [
+            "a105b45e-4be8-4c02-9786-711400423441",
+            "320ebc29-4068-4332-b525-23d4e0eea5bf"
+          ]
+        },
+        {
+          "level": 4,
+          "traitIds": [
+            "f39e0586-6f58-48d3-998c-1f3093c282db"
+          ]
+        },
+        {
+          "level": 5,
+          "traitIds": [
+            "82dbb992-336a-44fa-bff8-47b91c3ea303",
+            "add7a8b2-c330-49bf-bc8b-353e73699279"
+          ]
+        },
+        {
+          "level": 7,
+          "traitIds": [
+            "01bd2227-0032-4ab6-bbfa-57bc7475daa9"
+          ]
+        }
+      ]
     },
     {
       "id": "9a4a02b0-495c-409a-a434-d920364a38fa",
-      "name": "Rogue",
-      "description": "A stealth agent, dedicated to being agile, not so strong but having a great ability of hiding in plain view, silent, agile and efficient.",
-      "modifiers": []
+      "name": "Bard",
+      "description": "Invoking magic through music, dance, and verse, Bards are expert at inspiring others, soothing hurts, disheartening foes, and creating illusions. Bards believe the multiverse was spoken into existence and that remnants of its Words of Creation still resound and glimmer on every plane of existence. Bardic magic attempts to harness those words, which transcend any language.\n\nAnything can inspire a new song or tale, so Bards are fascinated by almost everything. They become masters of many things, including performing music, working magic, and making jests.\n\nA Bard’s life is spent traveling, gathering lore, telling stories, and living on the gratitude of audiences, much like any other entertainer. But Bards’ depth of knowledge and mastery of magic sets them apart.",
+      "modifiers": [],
+      "primaryAbility": "charisma",
+      "hitDie": "D8 per Level",
+      "savingThrowProficiencies": [
+        "dex",
+        "charisma"
+      ],
+      "skillProficiencies": {
+        "count": 3,
+        "options": [
+          "5dd77713-275c-4a97-b22e-147f178bd592",
+          "e7e071d4-de66-4b43-a6f3-028aaf9233a4",
+          "b96644c4-22d8-4ccf-b2a3-b2fd97475bf7",
+          "e3655bb1-2a98-43aa-8f07-8777e82da89a",
+          "6093913e-7d76-4e92-b194-7a7a1f65439a",
+          "63196faa-d5ca-4842-b44b-420bb9643a8b",
+          "04370dc4-b0f1-4248-a222-2ee2ce5ef887",
+          "ff7df345-68c2-4a25-9165-ca7db2913b75",
+          "a4050a5c-1524-4652-93fb-57af3d21f64f",
+          "38d22261-043d-4b1a-9a29-eb0c721a37bd",
+          "9cc2969c-2e9d-4161-9bd8-569e90493ec6",
+          "b36982ef-5b27-45ac-af3c-e82ae306a5e2",
+          "9ce69cd5-2b28-4950-8fdf-071c4e949d01",
+          "eb2b4379-2e87-435e-87bb-ea824e98adce",
+          "b5c6cb53-003a-4878-81bf-ead9d83c4b42",
+          "bcf2ff4a-7c0b-4b86-8c08-76e0055bc03f",
+          "58efb904-22c2-45e5-9922-e1505867808e",
+          "aeab0004-bcff-482c-86f4-9ee35faff0ad"
+        ]
+      },
+      "levelFeatures": []
     }
   ],
   "skills": [
@@ -57,109 +146,109 @@
       "id": "5dd77713-275c-4a97-b22e-147f178bd592",
       "name": "Acrobatics",
       "statKey": "dex",
-      "description": " It determines your ability to stay balanced, navigate tricky terrain, and perform physical stunts"
+      "description": "Stay on your feet in a tricky situation, or perform an acrobatic stunt."
     },
     {
       "id": "e7e071d4-de66-4b43-a6f3-028aaf9233a4",
       "name": "Animal Handling",
       "statKey": "wisdom",
-      "description": ""
+      "description": "Wisdom (Animal Handling) allows you to calm or train an animal, or get an animal to behave in a certain way.\n"
     },
     {
       "id": "b96644c4-22d8-4ccf-b2a3-b2fd97475bf7",
       "name": "Arcana",
       "statKey": "intelligence",
-      "description": ""
+      "description": "Recall lore about spells, magic items, and the planes of existence."
     },
     {
       "id": "e3655bb1-2a98-43aa-8f07-8777e82da89a",
       "name": "Athletics",
       "statKey": "str",
-      "description": ""
+      "description": "Jump farther than normal, stay afloat in rough water, or break something."
     },
     {
       "id": "6093913e-7d76-4e92-b194-7a7a1f65439a",
       "name": "Deception",
       "statKey": "charisma",
-      "description": ""
+      "description": "Tell a convincing lie, or wear a disguise convincingly."
     },
     {
       "id": "63196faa-d5ca-4842-b44b-420bb9643a8b",
       "name": "History",
       "statKey": "intelligence",
-      "description": ""
+      "description": "Recall lore about historical events, people, nations, and cultures."
     },
     {
       "id": "04370dc4-b0f1-4248-a222-2ee2ce5ef887",
       "name": "Insight",
       "statKey": "wisdom",
-      "description": ""
+      "description": "Discern a person’s mood and intentions."
     },
     {
       "id": "ff7df345-68c2-4a25-9165-ca7db2913b75",
       "name": "Intimidation",
       "statKey": "charisma",
-      "description": ""
+      "description": "Awe or threaten someone into doing what you want."
     },
     {
       "id": "a4050a5c-1524-4652-93fb-57af3d21f64f",
       "name": "Investigation",
       "statKey": "intelligence",
-      "description": ""
+      "description": "Find obscure information in books, or deduce how something works."
     },
     {
       "id": "38d22261-043d-4b1a-9a29-eb0c721a37bd",
       "name": "Medicine",
       "statKey": "wisdom",
-      "description": ""
+      "description": "Diagnose an illness, or determine what killed the recently slain."
     },
     {
       "id": "9cc2969c-2e9d-4161-9bd8-569e90493ec6",
       "name": "Nature",
       "statKey": "intelligence",
-      "description": ""
+      "description": "Recall lore about terrain, plants, animals, and weather."
     },
     {
       "id": "b36982ef-5b27-45ac-af3c-e82ae306a5e2",
       "name": "Perception",
       "statKey": "wisdom",
-      "description": ""
+      "description": "Using a combination of senses, notice something that’s easy to miss."
     },
     {
       "id": "9ce69cd5-2b28-4950-8fdf-071c4e949d01",
       "name": "Performance",
       "statKey": "charisma",
-      "description": ""
+      "description": "Act, tell a story, perform music, or dance."
     },
     {
       "id": "eb2b4379-2e87-435e-87bb-ea824e98adce",
       "name": "Persuasion",
       "statKey": "charisma",
-      "description": ""
+      "description": "Honestly and graciously convince someone of something."
     },
     {
       "id": "b5c6cb53-003a-4878-81bf-ead9d83c4b42",
       "name": "Religion",
       "statKey": "intelligence",
-      "description": ""
+      "description": "Recall lore about gods, religious rituals, and holy symbols."
     },
     {
       "id": "bcf2ff4a-7c0b-4b86-8c08-76e0055bc03f",
       "name": "Sleight of Hand",
       "statKey": "dex",
-      "description": ""
+      "description": "Pick a pocket, conceal a handheld object, or perform legerdemain."
     },
     {
       "id": "58efb904-22c2-45e5-9922-e1505867808e",
       "name": "Stealth",
       "statKey": "dex",
-      "description": ""
+      "description": "Escape notice by moving quietly and hiding behind things."
     },
     {
       "id": "aeab0004-bcff-482c-86f4-9ee35faff0ad",
       "name": "Survival",
       "statKey": "wisdom",
-      "description": ""
+      "description": "Follow tracks, forage, find a trail, or avoid natural hazards."
     }
   ],
   "traits": [
@@ -218,6 +307,77 @@
       ],
       "id": "6e3025cc-80ba-4650-9b53-93061fd54c78",
       "name": "Stonecunning"
+    },
+    {
+      "description": "You can **imbue yourself** with a primal power called **Rage**, a force that **grants you extraordinary might and resilience**. **You can enter it as a Bonus Action** if you **aren’t wearing Heavy armor**.\n\nYou can enter your **Rage the number of times shown for your Barbarian level in the Rages column** of the Barbarian Features table. **You regain one expended use when you finish a Short Rest**, and **you regain all expended uses when you finish a Long Rest**.\n\n*While active, your Rage follows the rules below:*\n\n### Damage Resistance\nYou have Resistance to **Bludgeoning**, **Piercing**, and **Slashing damage**.\n\n---\n\n### Rage Damage\nWhen you make an attack **using Strength**—with either a weapon or an Unarmed Strike—and deal damage to the target, **you gain a bonus to the damage** that **increases as you gain levels as a Barbarian**, as shown in the **Rage Damage column of the Barbarian Features table**.\n\n---\n\n### Strength Advantage\nYou have **Advantage on Strength checks** and **Strength saving throws**.\n\n---\n\n### No Concentration or Spells\nYou **can’t maintain Concentration**, and **you can’t cast spells**.\n\n---\n\n### Duration\nThe Rage **lasts until the end of your next turn**, and it ends early if you **don Heavy armor or have the Incapacitated condition**. If your Rage is still active on your next turn, **you can extend the Rage for another round by doing one of the following**:\n\n  - Make an attack roll against an enemy.\n  - Force an enemy to make a saving throw.\n  - Take a Bonus Action to extend your Rage.\n\n\nEach time the Rage is extended, it lasts until the end of your next turn. You can maintain a Rage for up to 10 minutes.",
+      "fields": [],
+      "id": "90030201-213f-42f9-acf6-3db11adebf8f",
+      "name": "Rage"
+    },
+    {
+      "description": "While you **aren’t wearing any armor**, your base **Armor Class equals {{armor_class}} plus your Dexterity and Constitution** modifiers. You can use a Shield and still gain this benefit.",
+      "fields": [
+        {
+          "id": "bb508547-6217-4af1-aa25-c378b350a233",
+          "label": "armor_class"
+        }
+      ],
+      "id": "6eb9914f-6857-4984-ac9e-3c431b6b00a6",
+      "name": "Unarmored Defense"
+    },
+    {
+      "description": "Your training with weapons allows you to **use the mastery properties of two kinds of Simple or Martial Melee weapons of your choice**. Whenever you **finish a Long Rest**, you can **practice weapon drills and change one of those weapon choices**.",
+      "fields": [],
+      "id": "2b932c28-5f75-442f-9b61-b58f54885b74",
+      "name": "Weapon Mastery"
+    },
+    {
+      "description": "You gain an **uncanny sense of when things aren’t as they should be**, giving you an edge when you dodge perils. \n\nYou have **Advantage on Dexterity saving throws** unless **you have the Incapacitated condition**.",
+      "fields": [],
+      "id": "178d32fa-c8b9-422b-a38e-70b011999cd3",
+      "name": "Danger Sense"
+    },
+    {
+      "description": "You can throw aside all concern for defense to attack with increased ferocity. When you make your first attack roll on your turn, you can decide to attack recklessly. Doing so gives you Advantage on attack rolls using Strength until the start of your next turn, but attack rolls against you have Advantage during that time.",
+      "fields": [],
+      "id": "4911217b-e737-4703-bdae-7f8878b77166",
+      "name": "Reckless Attack"
+    },
+    {
+      "description": "You gain a Barbarian subclass of your choice. A subclass is a specialization that grants you features at certain Barbarian levels. For the rest of your career, you gain each of your subclass’s features that are of your Barbarian level or lower.",
+      "fields": [],
+      "id": "a105b45e-4be8-4c02-9786-711400423441",
+      "name": "Barbarian Subclass"
+    },
+    {
+      "description": "You gain proficiency in another skill of your choice from the skill list available to Barbarians at level 1.\n\nIn addition, while your Rage is active, you can channel primal power when you attempt certain tasks; whenever you make an ability check using one of the following skills, you can make it as a Strength check even if it normally uses a different ability: Acrobatics, Intimidation, Perception, Stealth, or Survival. When you use this ability, your Strength represents primal power coursing through you, honing your agility, bearing, and senses.",
+      "fields": [],
+      "id": "320ebc29-4068-4332-b525-23d4e0eea5bf",
+      "name": "Primal Knowledge"
+    },
+    {
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Barbarian levels 8, 12, and 16.",
+      "fields": [],
+      "id": "f39e0586-6f58-48d3-998c-1f3093c282db",
+      "name": "Ability Score Improvement"
+    },
+    {
+      "description": "You can attack twice instead of once whenever you take the Attack action on your turn.",
+      "fields": [],
+      "id": "82dbb992-336a-44fa-bff8-47b91c3ea303",
+      "name": "Extra Attack"
+    },
+    {
+      "description": "Your speed increases by 10 feet while you aren’t wearing Heavy armor.",
+      "fields": [],
+      "id": "add7a8b2-c330-49bf-bc8b-353e73699279",
+      "name": "Fast Movement"
+    },
+    {
+      "description": "Your instincts are so honed that you have Advantage on Initiative rolls.",
+      "fields": [],
+      "id": "01bd2227-0032-4ab6-bbfa-57bc7475daa9",
+      "name": "Feral Instinct"
     }
   ],
   "species": [
@@ -281,6 +441,14 @@
         {
           "label": "Walk",
           "value": 30
+        },
+        {
+          "label": "climb",
+          "value": 15
+        },
+        {
+          "label": "swim",
+          "value": 15
         }
       ],
       "name": "Dwarf",

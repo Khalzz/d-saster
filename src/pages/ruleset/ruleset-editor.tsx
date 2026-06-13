@@ -71,11 +71,25 @@ export interface RulesetSpecie {
   damageVulnerabilities: string[];
 }
 
+export interface RulesetClassLevelFeature {
+  level: number;
+  traitIds: string[];
+}
+
 export interface RulesetClass {
   id: string;
   name: string;
   description: string;
   modifiers: RulesetClassModifier[];
+  primaryAbility: string;
+  hitDie: string;
+  savingThrowProficiencies: string[];
+  skillProficiencies: { count: number; options: string[] };
+  levelFeatures: RulesetClassLevelFeature[];
+  featureTable?: {
+    columns: { id: string; label: string; type?: "text" | "traits"; autofill?: boolean }[];
+    rows: { id: string; cells: Record<string, string | string[]> }[];
+  };
 }
 
 export interface RulesetSkill {
@@ -109,14 +123,26 @@ export interface Ruleset {
 }
 
 const NAV_ITEMS = [
-  { id: "general",  label: "General"  },
-  { id: "stats",    label: "Stats"    },
-  { id: "skills",   label: "Skills"   },
   { id: "classes",  label: "Classes"  },
-  { id: "species",  label: "Species"  },
-  { id: "traits",   label: "Traits"   },
+  { id: "general",  label: "General"  },
   { id: "rules",    label: "Rules"    },
+  { id: "skills",   label: "Skills"   },
+  { id: "species",  label: "Species"  },
+  { id: "stats",    label: "Stats"    },
+  { id: "traits",   label: "Traits"   },
 ] as const;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function migrateClass(c: any): RulesetClass {
+  return {
+    ...c,
+    primaryAbility:           c.primaryAbility           ?? "",
+    hitDie:                   c.hitDie                   ?? "",
+    savingThrowProficiencies: c.savingThrowProficiencies ?? [],
+    skillProficiencies:       c.skillProficiencies       ?? { count: 0, options: [] },
+    levelFeatures:            c.levelFeatures            ?? [],
+  };
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function migrateSpecie(sp: any): RulesetSpecie {
@@ -138,7 +164,7 @@ export default function RulesetEditor() {
   const navigate = useNavigate();
   const state = location.state as { existing?: Ruleset } | null;
 
-  const [activeSection, setActiveSection] = useState<typeof NAV_ITEMS[number]["id"]>("general");
+  const [activeSection, setActiveSection] = useState<typeof NAV_ITEMS[number]["id"]>("classes");
 
   const [ruleset, setRuleset] = useState<Ruleset>(() =>
     state?.existing
@@ -148,6 +174,7 @@ export default function RulesetEditor() {
           skillFormula:    state.existing.skillFormula    || "{{stat_mod}} + {{proficiency_bonus}}",
           stats:           (state.existing.stats ?? []).map(s => s.id ? s : { ...s, id: crypto.randomUUID() }),
           skills:          state.existing.skills    ?? [],
+          classes:         (state.existing.classes  ?? []).map(migrateClass),
           maxLevel:        state.existing.maxLevel   ?? 20,
           traits:          (state.existing.traits   ?? []).map(migrateTrait),
           species:         (state.existing.species  ?? []).map(migrateSpecie),
@@ -218,16 +245,14 @@ export default function RulesetEditor() {
           })}
         </nav>
 
-        <div className="flex-1 min-w-0 overflow-y-auto">
-          <div className="w-full mx-auto flex flex-col gap-2 justify-center items-center">
-            {activeSection === "general"  && <GeneralSection  ruleset={ruleset} setRuleset={setRuleset} />}
-            {activeSection === "stats"    && <StatsSection    ruleset={ruleset} setRuleset={setRuleset} />}
-            {activeSection === "skills"   && <SkillsSection   ruleset={ruleset} setRuleset={setRuleset} />}
-            {activeSection === "classes"  && <ClassesSection  ruleset={ruleset} setRuleset={setRuleset} />}
-            {activeSection === "species"  && <SpeciesSection  ruleset={ruleset} setRuleset={setRuleset} />}
-            {activeSection === "traits"   && <TraitsSection   ruleset={ruleset} setRuleset={setRuleset} />}
-            {activeSection === "rules"    && <RulesSection    ruleset={ruleset} setRuleset={setRuleset} />}
-          </div>
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {activeSection === "general"  && <GeneralSection  ruleset={ruleset} setRuleset={setRuleset} />}
+          {activeSection === "stats"    && <StatsSection    ruleset={ruleset} setRuleset={setRuleset} />}
+          {activeSection === "skills"   && <SkillsSection   ruleset={ruleset} setRuleset={setRuleset} />}
+          {activeSection === "classes"  && <ClassesSection  ruleset={ruleset} setRuleset={setRuleset} />}
+          {activeSection === "species"  && <SpeciesSection  ruleset={ruleset} setRuleset={setRuleset} />}
+          {activeSection === "traits"   && <TraitsSection   ruleset={ruleset} setRuleset={setRuleset} />}
+          {activeSection === "rules"    && <RulesSection    ruleset={ruleset} setRuleset={setRuleset} />}
         </div>
       </div>
     </main>

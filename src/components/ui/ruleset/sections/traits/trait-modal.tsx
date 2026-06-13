@@ -37,7 +37,7 @@ export function TraitModal({ trait: initial, isNew, onSave, onClose }: {
           value={trait.description}
           onChange={desc => setTrait(t => ({ ...t, description: desc }))}
           placeholder={"Describe this trait… Type {{ to insert a field variable."}
-          rows={5}
+          rows={10}
           extraVars={fieldVars}
         />
       </Field>

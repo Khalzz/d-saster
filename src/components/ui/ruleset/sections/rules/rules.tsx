@@ -40,6 +40,7 @@ export function RulesSection({ ruleset, setRuleset }: {
         <Plus className="h-3 w-3" /> Add Rule
       </button>
     } />
+    <div className="flex-1 overflow-y-auto min-h-0 w-2xl mx-auto py-4">
     {ruleset.rules.length === 0
       ? <p className="text-gold-700 text-xs px-4">No rules defined yet.</p>
       : <div className="flex flex-col gap-5 px-4 pb-4">
@@ -48,7 +49,7 @@ export function RulesSection({ ruleset, setRuleset }: {
             if (uncategorized.length === 0) return null;
             return (
               <div className="flex flex-col gap-2">
-                {uncategorized.map(rule => (
+                {uncategorized.slice().sort((a, b) => a.name.localeCompare(b.name)).map(rule => (
                   <RuleCard key={rule.id} rule={rule}
                     onEdit={() => setRuleModal({ rule: { ...rule }, isNew: false })}
                     onDelete={() => removeRule(rule.id)}
@@ -57,16 +58,16 @@ export function RulesSection({ ruleset, setRuleset }: {
               </div>
             );
           })()}
-          {ruleset.ruleCategories.map(cat => {
+          {ruleset.ruleCategories.slice().sort((a, b) => a.localeCompare(b)).map(cat => {
             const catRules = ruleset.rules.filter(r => r.category === cat);
             if (catRules.length === 0) return null;
             return (
-              <div key={cat} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
+              <div key={cat} className="flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
                   <span className="text-gold-500 text-lg font-semibold shrink-0">{cat}</span>
                   <div className="flex-1 h-px bg-gold-500/15" />
                 </div>
-                {catRules.map(rule => (
+                {catRules.slice().sort((a, b) => a.name.localeCompare(b.name)).map(rule => (
                   <RuleCard key={rule.id} rule={rule}
                     onEdit={() => setRuleModal({ rule: { ...rule }, isNew: false })}
                     onDelete={() => removeRule(rule.id)}
@@ -77,6 +78,7 @@ export function RulesSection({ ruleset, setRuleset }: {
           })}
         </div>
     }
+    </div>
     {ruleModal && (
       <RuleModal
         rule={ruleModal.rule}

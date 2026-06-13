@@ -202,6 +202,30 @@
                     "width": 0
                   },
                   "type": "section"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "94300411-9ce2-4d2d-b329-bc38f42f75ce",
+                      "settings": {
+                        "gap": 0,
+                        "padding": 0,
+                        "width": 0
+                      },
+                      "type": "features-and-traits"
+                    }
+                  ],
+                  "id": "cbb021f1-b7a2-4bbe-b1de-de0333f5c14e",
+                  "settings": {
+                    "description": "",
+                    "direction": "column",
+                    "gap": 8,
+                    "padding": 8,
+                    "title": "Features & Traits",
+                    "width": 0
+                  },
+                  "type": "section"
                 }
               ],
               "id": "84774db3-c5ce-4d65-a9fd-fc22af06da51",
@@ -343,30 +367,6 @@
                     "gap": 8,
                     "padding": 8,
                     "title": "Combat",
-                    "width": 0
-                  },
-                  "type": "section"
-                },
-                {
-                  "children": [
-                    {
-                      "children": [],
-                      "id": "94300411-9ce2-4d2d-b329-bc38f42f75ce",
-                      "settings": {
-                        "gap": 0,
-                        "padding": 0,
-                        "width": 0
-                      },
-                      "type": "features-and-traits"
-                    }
-                  ],
-                  "id": "cbb021f1-b7a2-4bbe-b1de-de0333f5c14e",
-                  "settings": {
-                    "description": "",
-                    "direction": "column",
-                    "gap": 8,
-                    "padding": 8,
-                    "title": "Features & Traits",
                     "width": 0
                   },
                   "type": "section"

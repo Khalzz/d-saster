@@ -42,7 +42,7 @@ export function StatsSection({ ruleset, setRuleset }: {
     } />
     <SectionBody>
       <FormulaInput label="Modifier formula" value={ruleset.modifierFormula} onChange={v => setRuleset(r => ({ ...r, modifierFormula: v }))} placeholder="({{stat_points}} - 10) / 2" />
-<div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {ruleset.stats.length === 0 && <p className="text-gold-700 text-xs">No stats defined yet.</p>}
         {ruleset.stats.map(stat => (
           <StatCard

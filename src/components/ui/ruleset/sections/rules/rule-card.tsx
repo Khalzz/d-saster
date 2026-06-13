@@ -10,7 +10,7 @@ export function RuleCard({ rule, onEdit, onDelete }: {
 }) {
   return (
     <Card
-      className="group cursor-pointer hover:border-gold-500/40! transition-colors bg-transparent! border-transparent!"
+      className="group cursor-pointer hover:border-gold-500/40! transition-colors ml-2"
       onClick={onEdit}
     >
       <button

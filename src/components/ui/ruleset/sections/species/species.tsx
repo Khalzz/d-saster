@@ -42,11 +42,9 @@ export default function SpeciesSection({ ruleset, setRuleset }: {
     });
   };
 
-  const onCreateTrait = (name: string): string => {
-    const id = crypto.randomUUID();
-    const newTrait: RulesetSpecieTrait = { id, name, description: "", fields: [] };
-    setRuleset(r => ({ ...r, traits: [...r.traits, newTrait] }));
-    return id;
+  const onCreateTrait = (trait: RulesetSpecieTrait): string => {
+    setRuleset(r => ({ ...r, traits: [...r.traits, trait] }));
+    return trait.id;
   };
 
   return <>
@@ -64,8 +62,8 @@ export default function SpeciesSection({ ruleset, setRuleset }: {
     <SectionBody>
       {ruleset.species.length === 0
         ? <p className="text-gold-700 text-xs px-4">No species defined yet.</p>
-        : <div className="flex flex-col gap-3 px-4 pb-4">
-            {ruleset.species.map(specie => (
+        : <div className="flex flex-col gap-3">
+            {ruleset.species.slice().sort((a, b) => a.name.localeCompare(b.name)).map(specie => (
               <SpecieCard
                 key={specie.id}
                 specie={specie}

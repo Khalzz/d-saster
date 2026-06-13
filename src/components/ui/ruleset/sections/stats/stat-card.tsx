@@ -5,7 +5,7 @@ import { Markdown } from "../../../Markdown";
 
 export function StatCard({ stat, onEdit, onDelete }: { stat: StatDefinition; onEdit: () => void; onDelete: () => void }) {
   return (
-    <Card className="group cursor-pointer hover:border-gold-500/40! transition-colors bg-transparent! border-transparent!" onClick={onEdit}>
+    <Card className="group cursor-pointer hover:border-gold-500/40! transition-colors" onClick={onEdit}>
       <button
         type="button"
         className="absolute top-2.5 right-2.5 w-6! h-6! min-w-0! p-0! shrink-0 bg-[#ef4444]/10! border-0! rounded-md! text-[#ef4444]! opacity-0 group-hover:opacity-100 transition-opacity"

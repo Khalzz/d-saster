@@ -39,8 +39,8 @@ export function TraitsSection({ ruleset, setRuleset }: {
     <SectionBody>
       {ruleset.traits.length === 0
         ? <p className="text-gold-700 text-xs px-4">No traits defined yet.</p>
-        : <div className="flex flex-col gap-3 px-4 pb-4">
-            {ruleset.traits.map(trait => (
+        : <div className="flex flex-col gap-3">
+            {ruleset.traits.slice().sort((a, b) => a.name.localeCompare(b.name)).map(trait => (
               <TraitCard
                 key={trait.id}
                 trait={trait}

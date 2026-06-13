@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Check, ChevronDown, Plus, Trash2, X } from "lucide-react";
 import Modal from "../../../modal/Modal";
 import Field from "../../../Field";
@@ -7,6 +7,7 @@ import { NumberInput } from "../../../NumberInput";
 import type { TraitAssignment, RulesetSpecie, RulesetSpecieTrait } from "../../../../../pages/ruleset/ruleset-editor";
 import { applyTraitFieldValues } from "../../../../../pages/ruleset/ruleset-editor";
 import { Markdown } from "../../../Markdown";
+import { TraitPickerModal } from "../TraitPickerModal";
 
 const RESISTANCE_SECTIONS = [
   { key: "damageResistances"    as const, label: "Damage Resistances"     },
@@ -61,84 +62,12 @@ function TagInput({ value, onChange }: { value: string[]; onChange: (v: string[]
   );
 }
 
-function TraitPickerModal({ availableTraits, selectedIds, onToggle, onCreate, onClose }: {
-  availableTraits: RulesetSpecieTrait[];
-  selectedIds: string[];
-  onToggle: (id: string) => void;
-  onCreate: (name: string) => void;
-  onClose: () => void;
-}) {
-  const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 30);
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  const filtered = availableTraits.filter(t => t.name.toLowerCase().includes(query.toLowerCase()));
-  const canCreate = query.trim() !== "" && !availableTraits.some(t => t.name.toLowerCase() === query.trim().toLowerCase());
-
-  return createPortal(
-    <div className="fixed inset-0 z-200 backdrop-blur-lg flex items-center justify-center p-4" onClick={onClose}>
-      <div className="relative flex flex-col items-center gap-2" onClick={e => e.stopPropagation()}>
-        <div className="w-130 bg-surface border border-gold-500 rounded-xl shadow-lg shadow-gold-950/50 overflow-hidden">
-          <input
-            ref={inputRef}
-            className="w-full h-14 text-xl border-none! bg-transparent! text-gold-300 outline-none px-4 placeholder:text-gold-700 caret-gold-500"
-            placeholder="Search traits…"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-          <div className="max-h-64 overflow-y-auto border-t border-gold-500/20">
-            {filtered.length === 0 && !canCreate && (
-              <p className="text-gold-700 text-xs px-4 py-3">No traits found.</p>
-            )}
-            {filtered.map(trait => {
-              const active = selectedIds.includes(trait.id);
-              return (
-                <div
-                  key={trait.id}
-                  className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gold-500/10 transition-colors ${active ? "bg-gold-500/10" : ""}`}
-                  onClick={() => onToggle(trait.id)}
-                >
-                  <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${active ? "bg-gold-500 border-gold-500" : "border-gold-500/30"}`}>
-                    {active && <Check className="h-3 w-3 text-gray-900" />}
-                  </span>
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <span className={`text-sm font-medium ${active ? "text-gold-300" : "text-gold-400"}`}>
-                      {trait.name || <span className="italic text-gold-700">Unnamed</span>}
-                    </span>
-                    {trait.description && (
-                      <span className="text-gold-600 text-xs truncate">{trait.description}</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {canCreate && (
-          <button
-            className="flex items-center gap-1.5 text-sm px-3!"
-            onClick={() => { onCreate(query.trim()); setQuery(""); onClose(); }}
-          >
-            <Plus className="h-3 w-3" /> Create "{query.trim()}"
-          </button>
-        )}
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 export function SpecieModal({ specie: initial, isNew, availableTraits, onCreateTrait, onSave, onClose }: {
   specie: RulesetSpecie;
   isNew: boolean;
   availableTraits: RulesetSpecieTrait[];
-  onCreateTrait: (name: string) => string;
+  onCreateTrait: (trait: RulesetSpecieTrait) => string;
   onSave: (specie: RulesetSpecie) => void;
   onClose: () => void;
 }) {
@@ -273,7 +202,7 @@ export function SpecieModal({ specie: initial, isNew, availableTraits, onCreateT
               <Field label="Description">
                 <textarea
                   className="w-full rounded-md px-2.5 py-2 border border-gold-500/20 bg-base text-gold-200 text-xs resize-y outline-none focus:border-gold-500/40 transition-colors placeholder:text-gold-700 font-sans"
-                  rows={3}
+                  rows={10}
                   value={specie.description}
                   onChange={e => patch({ description: e.target.value })}
                   placeholder="Describe this specie…"
@@ -385,8 +314,8 @@ export function SpecieModal({ specie: initial, isNew, availableTraits, onCreateT
                     : [...specie.traitAssignments, { traitId: id, values: {} } as TraitAssignment]
                   });
                 }}
-                onCreate={name => {
-                  const id = onCreateTrait(name);
+                onCreate={trait => {
+                  const id = onCreateTrait(trait);
                   patch({ traitAssignments: [...specie.traitAssignments, { traitId: id, values: {} }] });
                 }}
                 onClose={() => setTraitPickerOpen(false)}

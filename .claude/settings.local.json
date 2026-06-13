@@ -30,7 +30,9 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Khals\\\\OneDrive\\\\Desktop\\\\d-saster\\\\src\\\\pages\\\\sheet-editor\" -Recurse -File)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Khals\\\\OneDrive\\\\Desktop\\\\d-saster\\\\src\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty Name)",
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Khals\\\\OneDrive\\\\Desktop\\\\d-saster\\\\src\\\\components\\\\ui\\\\ruleset\\\\sections\\\\\" -Recurse -File | Select-Object FullName)"
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Khals\\\\OneDrive\\\\Desktop\\\\d-saster\\\\src\\\\components\\\\ui\\\\ruleset\\\\sections\\\\\" -Recurse -File | Select-Object FullName)",
+      "Bash(cargo build *)",
+      "Bash(xargs grep -l \"interface Character\")"
     ]
   }
 }

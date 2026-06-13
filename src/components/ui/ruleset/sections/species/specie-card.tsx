@@ -52,29 +52,27 @@ export function SpecieCard({ specie, traits, onEdit, onDelete }: {
       <p className="text-gold-300 font-semibold text-lg pr-6">{specie.name || "Unnamed specie"}</p>
       {mainMarkdown && <Markdown className="text-xs">{mainMarkdown}</Markdown>}
       {resolvedTraits.length > 0 && (
-        <div className="mt-1">
+        <div className="mt-2 flex flex-col gap-1.5">
           <Markdown className="text-xs mb-0">{"## Traits"}</Markdown>
-          <div className="pl-3 flex flex-col gap-2">
-            {resolvedTraits.map(({ trait, values }) => {
-              const fieldParts = (trait.fields ?? [])
-                .filter(f => values[f.id])
-                .map(f => `${f.label}: ${values[f.id]}`);
-              const desc = trait.description
-                ? applyTraitFieldValues(trait.description, trait.fields ?? [], values)
-                : "";
-              return (
-                <div key={trait.id} className="flex flex-col gap-0.5">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="text-gold-300 text-sm font-semibold">{trait.name}</span>
-                    {fieldParts.length > 0 && (
-                      <span className="text-gold-600 text-xs">({fieldParts.join(", ")})</span>
-                    )}
-                  </div>
-                  {desc && <Markdown className="text-xs">{desc}</Markdown>}
+          {resolvedTraits.map(({ trait, values }) => {
+            const desc = trait.description
+              ? applyTraitFieldValues(trait.description, trait.fields ?? [], values)
+              : "";
+            const fieldParts = (trait.fields ?? [])
+              .filter(f => values[f.id])
+              .map(f => `${f.label}: ${values[f.id]}`);
+            return (
+              <div key={trait.id} className="border border-gold-500/20 rounded-lg px-3 py-2 flex flex-col gap-1 bg-base/40">
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-gold-300 text-sm font-semibold">{trait.name}</span>
+                  {fieldParts.length > 0 && (
+                    <span className="text-gold-600 text-xs font-light">({fieldParts.join(", ")})</span>
+                  )}
                 </div>
-              );
-            })}
-          </div>
+                {desc && <Markdown className="text-xs">{desc}</Markdown>}
+              </div>
+            );
+          })}
         </div>
       )}
     </Card>
