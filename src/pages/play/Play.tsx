@@ -151,6 +151,19 @@ export default function Play() {
     return () => window.removeEventListener("campaign-updated", refresh);
   }, [campaignId]);
 
+  // Refresh scene characters when a character is saved from the editor
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const updatedId = (e as CustomEvent<{ id: string }>).detail?.id;
+      if (!updatedId) return;
+      invoke<Character[]>("list_characters").then(allChars => {
+        setSceneCharacters(prev => prev.map(c => allChars.find(a => a.id === c.id) ?? c));
+      }).catch(() => {});
+    };
+    window.addEventListener("character-updated", handler);
+    return () => window.removeEventListener("character-updated", handler);
+  }, []);
+
   const addToken = (character: Character, col: number, row: number) => {
     setTokens(prev => {
       const updated = [

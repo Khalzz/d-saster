@@ -61,7 +61,18 @@ export default function CharacterEditor() {
 
   const [char, setChar] = useState<Character>(() =>
     state?.existing
-      ? { ...state.existing, level: state.existing.level ?? 1, skillProficiencies: state.existing.skillProficiencies ?? {}, savingThrowProficiencies: state.existing.savingThrowProficiencies ?? {} }
+      ? {
+          ...state.existing,
+          level: state.existing.level ?? 1,
+          skillProficiencies: state.existing.skillProficiencies ?? {},
+          savingThrowProficiencies: state.existing.savingThrowProficiencies ?? {},
+          // Pre-populate customFields from top-level char properties so sheet nodes show correct values
+          customFields: {
+            name: state.existing.name ?? "",
+            level: state.existing.level ?? 1,
+            ...state.existing.customFields,
+          },
+        }
       : {
           id: crypto.randomUUID(),
           name: "",
@@ -91,6 +102,27 @@ export default function CharacterEditor() {
     invoke<CharacterClass[]>("list_classes").then(setClasses).catch(() => {});
   }, []);
 
+  // Always load character fresh from disk to avoid stale navigation state
+  useEffect(() => {
+    const id = state?.existing?.id;
+    if (!id) return;
+    invoke<Character>("get_character", { id })
+      .then(fresh => {
+        setChar({
+          ...fresh,
+          level: fresh.level ?? 1,
+          skillProficiencies: fresh.skillProficiencies ?? {},
+          savingThrowProficiencies: fresh.savingThrowProficiencies ?? {},
+          customFields: {
+            name: fresh.name ?? "",
+            level: fresh.level ?? 1,
+            ...fresh.customFields,
+          },
+        });
+      })
+      .catch(e => console.error("Failed to reload character from disk:", e));
+  }, []);
+
   useEffect(() => {
     if (!showRulesetDropdown) return;
     const h = (e: MouseEvent) => { if (!rulesetDropdownRef.current?.contains(e.target as Node)) setShowRulesetDropdown(false); };
@@ -115,10 +147,24 @@ export default function CharacterEditor() {
   };
 
   const handleSave = async () => {
-    if (!char.name.trim()) { toast.error("Name is required"); return; }
-    await invoke("save_character", { character: { ...char, name: char.name.trim() } }).catch(() => {});
-    toast.success("Character saved");
-    navigate(-1);
+    // Sync top-level fields from customFields (TextInputNode/CountNode write to customFields, not top-level props)
+    const cf = char.customFields ?? {};
+    const name = String(cf["name"] ?? char.name ?? "").trim();
+    if (!name) { toast.error("Name is required"); return; }
+    const level = typeof cf["level"] === "number" ? cf["level"] as number : char.level;
+    const description = String(cf["description"] ?? char.description ?? "");
+    const origin = String(cf["origin"] ?? char.origin ?? "");
+    const payload = { ...char, name, level, description, origin };
+    console.log("[save_character] payload:", JSON.stringify(payload, null, 2));
+    try {
+      await invoke("save_character", { character: payload });
+      window.dispatchEvent(new CustomEvent("character-updated", { detail: { id: payload.id } }));
+      toast.success("Character saved");
+      navigate(-1);
+    } catch (e) {
+      console.error("[save_character] FAILED:", e);
+      toast.error("Failed to save: " + String(e));
+    }
   };
 
   return (
@@ -215,7 +261,15 @@ export default function CharacterEditor() {
       <div className="flex-1 max-w-4xl mx-auto w-full bg-surface border-x border-gold-500/30  overflow-auto">
         <CharacterSheetView
           char={char}
-          onChange={(patch) => setChar(c => ({ ...c, ...patch }))}
+          onChange={(patch) => setChar(c => {
+            const next = { ...c, ...patch };
+            // Deep-merge nested objects so stale closures in nodes can't drop each other's keys
+            if (patch.customFields) next.customFields = { ...c.customFields, ...patch.customFields };
+            if (patch.stats) next.stats = { ...c.stats, ...patch.stats };
+            if (patch.savingThrowProficiencies) next.savingThrowProficiencies = { ...c.savingThrowProficiencies, ...patch.savingThrowProficiencies };
+            if (patch.skillProficiencies) next.skillProficiencies = { ...c.skillProficiencies, ...patch.skillProficiencies };
+            return next;
+          })}
           ruleset={selectedRuleset}
           statDefs={activeStatDefs}
           skills={activeSkills}

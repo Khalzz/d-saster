@@ -32,7 +32,8 @@
       "Bash(Select-Object -ExpandProperty Name)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Khals\\\\OneDrive\\\\Desktop\\\\d-saster\\\\src\\\\components\\\\ui\\\\ruleset\\\\sections\\\\\" -Recurse -File | Select-Object FullName)",
       "Bash(cargo build *)",
-      "Bash(xargs grep -l \"interface Character\")"
+      "Bash(xargs grep -l \"interface Character\")",
+      "Bash(cargo check *)"
     ]
   }
 }

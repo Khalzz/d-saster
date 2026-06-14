@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { SectionHeader } from "../section-header";
-import type { Ruleset, RulesetClass, RulesetSpecieTrait } from "../../../../../pages/ruleset/ruleset-editor";
+import type { Ruleset, RulesetClass } from "../../../../../pages/ruleset/ruleset-editor";
 import { ClassCard } from "./class-card";
 import { ClassInlineEditor } from "./class-modal";
 import type { ClassInlineEditorHandle } from "./class-modal";
@@ -54,11 +54,6 @@ export function ClassesSection({ ruleset, setRuleset }: {
     setConfirmDelete(false);
   };
 
-  const onCreateTrait = (trait: RulesetSpecieTrait) =>
-    setRuleset(r => ({ ...r, traits: [...r.traits, trait] }));
-
-  const onUpdateTrait = (trait: RulesetSpecieTrait) =>
-    setRuleset(r => ({ ...r, traits: r.traits.map(t => t.id === trait.id ? trait : t) }));
 
   const title = editing ? (
     <>
@@ -111,8 +106,6 @@ export function ClassesSection({ ruleset, setRuleset }: {
             stats={ruleset.stats}
             skills={ruleset.skills}
             traits={ruleset.traits}
-            onCreateTrait={onCreateTrait}
-            onUpdateTrait={onUpdateTrait}
             onNameChange={setEditingName}
           />
         ) : (

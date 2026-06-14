@@ -86,6 +86,8 @@ export interface RulesetClass {
   savingThrowProficiencies: string[];
   skillProficiencies: { count: number; options: string[] };
   levelFeatures: RulesetClassLevelFeature[];
+  image?: string;
+  color?: string;
   featureTable?: {
     columns: { id: string; label: string; type?: "text" | "traits"; autofill?: boolean }[];
     rows: { id: string; cells: Record<string, string | string[]> }[];

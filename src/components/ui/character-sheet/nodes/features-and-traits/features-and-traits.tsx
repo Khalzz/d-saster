@@ -36,7 +36,9 @@ function SectionLabel({ label }: { label: string }) {
 
 export function FeaturesAndTraitsNode({ node, useSheet }: { node: LayoutNode; useSheet: () => SheetContext }) {
   const { padding, width } = node.settings as FeaturesAndTraitsSettings;
-  const { char, ruleset } = useSheet();
+  const { char, ruleset, vars } = useSheet();
+  const rawLevel = vars["level"] ?? char.level ?? 0;
+  const charLevel = Math.floor(Number(rawLevel));
 
   const specieTraits: { trait: RulesetSpecieTrait; values: Record<string, string> }[] = (() => {
     const specie = ruleset?.species?.find(s => s.id === char.race);
@@ -46,14 +48,15 @@ export function FeaturesAndTraitsNode({ node, useSheet }: { node: LayoutNode; us
       .filter((x): x is { trait: RulesetSpecieTrait; values: Record<string, string> } => !!x.trait);
   })();
 
-  const classTraitGroups: { className: string; traits: RulesetSpecieTrait[] }[] = (() => {
+  const classTraitGroups: { className: string; levels: { level: number; traits: RulesetSpecieTrait[] }[] }[] = (() => {
     if (!ruleset) return [];
 
-    const resolve = (classId: string, level: number) => {
+    const resolve = (classId: string, maxLevel: number) => {
       const cls = ruleset.classes?.find(c => c.id === classId);
       if (!cls) return null;
+
+      const levelMap = new Map<number, RulesetSpecieTrait[]>();
       const seen = new Set<string>();
-      const traits: RulesetSpecieTrait[] = [];
 
       const ft = cls.featureTable;
       const levelCol = ft?.columns[0];
@@ -63,42 +66,64 @@ export function FeaturesAndTraitsNode({ node, useSheet }: { node: LayoutNode; us
         ft.rows
           .filter(row => {
             const n = parseFloat((row.cells[levelCol.id] as string) ?? "");
-            return !isNaN(n) && n <= level;
+            return !isNaN(n) && n <= maxLevel;
           })
           .sort((a, b) =>
             parseFloat((a.cells[levelCol.id] as string) ?? "0") -
             parseFloat((b.cells[levelCol.id] as string) ?? "0")
           )
           .forEach(row => {
+            const lvNum = parseFloat((row.cells[levelCol.id] as string) ?? "0");
+            const bucket: RulesetSpecieTrait[] = [];
             traitCols.forEach(col => {
               ((row.cells[col.id] as string[] | undefined) ?? []).forEach(id => {
                 if (!seen.has(id)) {
                   seen.add(id);
                   const t = ruleset.traits?.find(t => t.id === id);
-                  if (t) traits.push(t);
+                  if (t) bucket.push(t);
                 }
               });
             });
+            if (bucket.length > 0) levelMap.set(lvNum, (levelMap.get(lvNum) ?? []).concat(bucket));
           });
       } else {
         (cls.levelFeatures ?? [])
-          .filter(lf => lf.level <= level)
+          .filter(lf => lf.level <= maxLevel)
           .sort((a, b) => a.level - b.level)
-          .forEach(lf => lf.traitIds.forEach(id => {
-            if (!seen.has(id)) {
-              seen.add(id);
-              const t = ruleset.traits?.find(t => t.id === id);
-              if (t) traits.push(t);
-            }
-          }));
+          .forEach(lf => {
+            const bucket: RulesetSpecieTrait[] = [];
+            lf.traitIds.forEach(id => {
+              if (!seen.has(id)) {
+                seen.add(id);
+                const t = ruleset.traits?.find(t => t.id === id);
+                if (t) bucket.push(t);
+              }
+            });
+            if (bucket.length > 0) levelMap.set(lf.level, (levelMap.get(lf.level) ?? []).concat(bucket));
+          });
       }
 
-      return traits.length > 0 ? { className: cls.name, traits } : null;
+      if (levelMap.size === 0) return null;
+      const levels = [...levelMap.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([level, traits]) => ({ level, traits }));
+      return { className: cls.name, levels };
     };
 
-    const groups: { className: string; traits: RulesetSpecieTrait[] }[] = [];
-    if (char.classId) { const g = resolve(char.classId, char.level); if (g) groups.push(g); }
-    (char.multiclass ?? []).forEach(mc => { const g = resolve(mc.classId, mc.level); if (g) groups.push(g); });
+    const mc = char.multiclass ?? [];
+    const allEntries = (() => {
+      const ids = mc.map(m => m.classId);
+      if (char.classId && !ids.includes(char.classId)) {
+        const derived = Math.max(0, charLevel - mc.reduce((s, m) => s + m.level, 0));
+        return [{ classId: char.classId, level: derived }, ...mc];
+      }
+      return mc;
+    })();
+
+    const groups: { className: string; levels: { level: number; traits: RulesetSpecieTrait[] }[] }[] = [];
+    if (charLevel > 0) {
+      allEntries.forEach(entry => { if (entry.level > 0) { const g = resolve(entry.classId, entry.level); if (g) groups.push(g); } });
+    }
     return groups;
   })();
 
@@ -113,7 +138,7 @@ export function FeaturesAndTraitsNode({ node, useSheet }: { node: LayoutNode; us
           </span>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col">
           {specieTraits.length > 0 && (
             <div className="flex flex-col gap-2">
               <SectionLabel label="Specie Traits" />
@@ -122,11 +147,19 @@ export function FeaturesAndTraitsNode({ node, useSheet }: { node: LayoutNode; us
               ))}
             </div>
           )}
-          {classTraitGroups.map(({ className, traits }) => (
-            <div key={className} className="flex flex-col gap-2">
+          {classTraitGroups.map(({ className, levels }) => (
+            <div key={className} className="flex flex-col gap-3">
               <SectionLabel label={`${className} Features`} />
-              {traits.map(trait => (
-                <TraitCard key={trait.id} trait={trait} />
+              {levels.map(({ level, traits }) => (
+                <div key={level} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-semibold uppercase tracking-widest text-gold-500/50 shrink-0">Level {level}</span>
+                    <div className="flex-1 h-px bg-gold-500/8" />
+                  </div>
+                  {traits.map((trait: RulesetSpecieTrait) => (
+                    <TraitCard key={trait.id} trait={trait} />
+                  ))}
+                </div>
               ))}
             </div>
           ))}

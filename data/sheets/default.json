@@ -30,7 +30,7 @@
                       "id": "808f18ef-9d87-4147-880f-a3965eeb5349",
                       "settings": {
                         "gap": 0,
-                        "label": "Name",
+                        "label": "name",
                         "padding": 0,
                         "placeholder": "",
                         "width": 0

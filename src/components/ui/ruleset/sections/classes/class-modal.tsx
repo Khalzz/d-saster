@@ -1,12 +1,11 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, GripVertical, Plus, X } from "lucide-react";
+import { Check, ChevronDown, GripVertical, ImagePlus, Plus, X } from "lucide-react";
 import Field from "../../../Field";
 import { NumberInput } from "../../../NumberInput";
-import { Markdown } from "../../../Markdown";
 import { TraitPickerModal } from "../TraitPickerModal";
-import { TraitModal } from "../traits/trait-modal";
-import type { RulesetClass, RulesetClassLevelFeature, RulesetSpecieTrait, StatDefinition, RulesetSkill } from "../../../../../pages/ruleset/ruleset-editor";
+import { ColorPicker } from "../../../../campaign/CampaignSelector";
+import type { RulesetClass, RulesetSpecieTrait, StatDefinition, RulesetSkill } from "../../../../../pages/ruleset/ruleset-editor";
 
 function ModalSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -143,131 +142,6 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, selectA
 }
 
 
-function LevelFeatureModal({ entry: initial, isNew, availableTraits, onCreateTrait, onUpdateTrait, onDelete, onSave, onClose }: {
-  entry: RulesetClassLevelFeature;
-  isNew: boolean;
-  availableTraits: RulesetSpecieTrait[];
-  onCreateTrait: (trait: RulesetSpecieTrait) => void;
-  onUpdateTrait: (trait: RulesetSpecieTrait) => void;
-  onDelete?: () => void;
-  onSave: (entry: RulesetClassLevelFeature) => void;
-  onClose: () => void;
-}) {
-  const [entry, setEntry] = useState<RulesetClassLevelFeature>(initial);
-  const [traitPickerOpen, setTraitPickerOpen] = useState(false);
-  const [editingTrait, setEditingTrait] = useState<RulesetSpecieTrait | null>(null);
-
-  const patchEntry = (p: Partial<RulesetClassLevelFeature>) => setEntry(e => ({ ...e, ...p }));
-  const assignedTraits = entry.traitIds
-    .map(id => availableTraits.find(t => t.id === id))
-    .filter((t): t is RulesetSpecieTrait => !!t);
-
-  return createPortal(
-    <>
-      <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
-        <div className="bg-surface border border-gold-500/20 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl pointer-events-auto">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-gold-500/20 shrink-0">
-            <h2 className="text-gold-300 font-semibold text-sm flex-1">
-              {isNew ? "Add Level Feature" : "Edit Level Feature"}
-            </h2>
-            <button type="button" className="w-6! h-6! min-w-0! p-0! bg-transparent! border-0! text-gold-600! hover:text-gold-300!" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-            <Field label="Level">
-              <input
-                type="number"
-                min={1}
-                className="bg-base border border-gold-500/30 rounded-md px-2 h-9 text-xs text-gold-400 w-full outline-none focus:border-gold-500/50 caret-gold-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
-                value={entry.level}
-                onChange={e => patchEntry({ level: Math.max(1, parseInt(e.target.value) || 1) })}
-                autoFocus
-              />
-            </Field>
-
-            <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-gold-500/50 select-none">Traits</span>
-              {assignedTraits.map(t => (
-                <div
-                  key={t.id}
-                  className="border border-gold-500/20 rounded-lg px-3 py-2 flex flex-col gap-2 cursor-pointer hover:border-gold-500/40 transition-colors"
-                  onClick={() => setEditingTrait(t)}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-gold-300 text-xs font-semibold">{t.name || <span className="italic text-gold-600">Unnamed</span>}</span>
-                    <button
-                      type="button"
-                      className="w-5! h-5! min-w-0! p-0! bg-transparent! border-0! text-gold-700! hover:text-[#ef4444]! shrink-0"
-                      onClick={e => { e.stopPropagation(); patchEntry({ traitIds: entry.traitIds.filter(id => id !== t.id) }); }}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                  {t.description && <Markdown className="text-[11px] text-gold-600">{t.description}</Markdown>}
-                </div>
-              ))}
-              <button
-                type="button"
-                className="w-full! h-8! text-[11px]! gap-1.5! bg-transparent! border! border-dashed! border-gold-500/20! rounded-lg! text-gold-600! hover:text-gold-400! hover:border-gold-500/40!"
-                onClick={() => setTraitPickerOpen(true)}
-              >
-                <Plus className="h-3 w-3" /> Add Trait
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 px-4 py-3 border-t border-gold-500/20 shrink-0">
-            {onDelete && (
-              <button
-                className="px-4! h-8! text-xs! border-red-500/30! text-red-400! hover:bg-red-500/10! hover:border-red-500/50! mr-auto!"
-                onClick={onDelete}
-              >
-                Delete
-              </button>
-            )}
-            <button className="px-4! h-8! text-xs! border-gold-500/30! text-gold-500!" onClick={onClose}>Cancel</button>
-            <button
-              className="px-4! h-8! text-xs! bg-gold-500! text-gray-900! border-gold-500! hover:bg-gold-400! hover:border-gold-400!"
-              onClick={() => onSave(entry)}
-            >
-              {isNew ? "Add" : "Save"}
-            </button>
-          </div>
-        </div>
-      </div>
-      {traitPickerOpen && (
-        <TraitPickerModal
-          availableTraits={availableTraits}
-          selectedIds={entry.traitIds}
-          onToggle={id => {
-            const exists = entry.traitIds.includes(id);
-            patchEntry({ traitIds: exists ? entry.traitIds.filter(tid => tid !== id) : [...entry.traitIds, id] });
-          }}
-          onCreate={trait => {
-            onCreateTrait(trait);
-            patchEntry({ traitIds: [...entry.traitIds, trait.id] });
-          }}
-          onClose={() => setTraitPickerOpen(false)}
-        />
-      )}
-      {editingTrait && createPortal(
-        <div className="fixed inset-0 z-300">
-          <TraitModal
-            trait={editingTrait}
-            isNew={false}
-            onSave={trait => { onUpdateTrait(trait); setEditingTrait(null); }}
-            onClose={() => setEditingTrait(null)}
-          />
-        </div>,
-        document.body
-      )}
-    </>,
-    document.body
-  );
-}
 
 type FeatureTableData = NonNullable<RulesetClass["featureTable"]>;
 type ColumnType = "text" | "traits";
@@ -418,12 +292,12 @@ function FeatureTable({ table, onChange, availableTraits }: {
     <>
       <div className="flex flex-col gap-2">
         <div className="overflow-x-auto rounded-md border border-gold-500/20">
-          <table className="w-auto border-collapse text-xs whitespace-nowrap">
+          <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="border-b border-gold-500/20 divide-x divide-gold-500/15">
-                <th className="w-5 px-1" />
+                <th className="w-5 px-1 shrink-0" />
                 {table.columns.map(col => (
-                  <th key={col.id} className="px-2 py-1.5 text-left">
+                  <th key={col.id} className="px-2 py-1.5 text-left whitespace-nowrap">
                     <button
                       type="button"
                       className="bg-transparent! border-0! h-auto! p-0! text-gold-500/70! font-semibold! text-[11px]! hover:text-gold-300! w-full! text-left! justify-start!"
@@ -563,10 +437,8 @@ export const ClassInlineEditor = forwardRef<ClassInlineEditorHandle, {
   stats: StatDefinition[];
   skills: RulesetSkill[];
   traits: RulesetSpecieTrait[];
-  onCreateTrait: (trait: RulesetSpecieTrait) => void;
-  onUpdateTrait: (trait: RulesetSpecieTrait) => void;
   onNameChange?: (name: string) => void;
-}>(function ClassInlineEditor({ cls: initial, stats, skills, traits, onCreateTrait, onUpdateTrait, onNameChange }, ref) {
+}>(function ClassInlineEditor({ cls: initial, stats, skills, traits, onNameChange }, ref) {
   const [cls, setCls] = useState<RulesetClass>(() => {
     if (initial.featureTable) return initial;
     const levelColId = crypto.randomUUID();
@@ -583,33 +455,48 @@ export const ClassInlineEditor = forwardRef<ClassInlineEditorHandle, {
     };
   });
   const patch = (p: Partial<RulesetClass>) => setCls(c => ({ ...c, ...p }));
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => patch({ image: ev.target?.result as string });
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   useImperativeHandle(ref, () => ({ getCurrentCls: () => cls }), [cls]);
 
-  const [levelModal, setLevelModal] = useState<{ entry: RulesetClassLevelFeature; idx: number | null } | null>(null);
-
-  const removeLevel = (idx: number) =>
-    patch({ levelFeatures: cls.levelFeatures.filter((_, i) => i !== idx) });
-
-  const openAddLevel = () => {
-    const next = cls.levelFeatures.length > 0 ? Math.max(...cls.levelFeatures.map(lf => lf.level)) + 1 : 1;
-    setLevelModal({ entry: { level: next, traitIds: [] }, idx: null });
-  };
-
-  const saveLevel = (entry: RulesetClassLevelFeature) => {
-    if (levelModal!.idx === null) {
-      patch({ levelFeatures: [...cls.levelFeatures, entry] });
-    } else {
-      patch({ levelFeatures: cls.levelFeatures.map((lf, i) => i === levelModal!.idx ? entry : lf) });
-    }
-    setLevelModal(null);
-  };
 
   return (
     <>
       <div className="bg-surface border-x border-gold-500/20 p-4 flex flex-col gap-3">
         <ModalSection title="Identity">
           <div className="flex flex-col gap-3">
+            <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
+            <div
+              className="w-full h-28 rounded-md overflow-hidden relative flex items-center justify-center cursor-pointer group border border-gold-500/20"
+              style={{ background: cls.color ?? "#1a2d1f" }}
+              onClick={() => imgInputRef.current?.click()}
+            >
+              {cls.image
+                ? <img src={cls.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                : null}
+              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                <ImagePlus className="h-4 w-4 text-white" />
+                <span className="text-white text-xs font-medium">Upload image</span>
+              </div>
+              {cls.image && (
+                <button
+                  className="absolute top-1.5 right-1.5 p-0! border-0! bg-black/50! text-white! hover:bg-black/70! rounded-md! w-6! h-6! flex items-center justify-center!"
+                  onClick={e => { e.stopPropagation(); patch({ image: undefined }); }}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <ColorPicker value={cls.color ?? "#1a2d1f"} onChange={color => patch({ color })} />
             <Field label="Name">
               <input
                 className="bg-base border border-gold-500/30 rounded-md px-2 h-9 text-xs text-gold-400 w-full outline-none focus:border-gold-500/50 caret-gold-500"
@@ -695,64 +582,48 @@ export const ClassInlineEditor = forwardRef<ClassInlineEditorHandle, {
           </div>
         </ModalSection>
 
-        {cls.levelFeatures
-          .slice()
-          .sort((a, b) => a.level - b.level)
-          .map(lf => {
-            const realIdx = cls.levelFeatures.indexOf(lf);
+        {(() => {
+          const ft = cls.featureTable;
+          if (!ft) return null;
+          const levelCol = ft.columns[0];
+          const traitCols = ft.columns.filter(c => c.type === "traits");
+          if (!levelCol || traitCols.length === 0) return null;
+          const rows = [...ft.rows]
+            .filter(row => (row.cells[levelCol.id] as string)?.trim() !== "")
+            .sort((a, b) =>
+              parseFloat((a.cells[levelCol.id] as string) ?? "0") -
+              parseFloat((b.cells[levelCol.id] as string) ?? "0")
+            );
+          if (rows.length === 0) return null;
+          return rows.map(row => {
+            const levelVal = (row.cells[levelCol.id] as string) ?? "";
+            const rowTraits = traitCols
+              .flatMap(col => (row.cells[col.id] as string[] | undefined) ?? [])
+              .map(id => traits.find(t => t.id === id))
+              .filter((t): t is typeof traits[number] => !!t);
+            if (rowTraits.length === 0) return null;
             return (
-              <div
-                key={realIdx}
-                className="relative rounded-md border border-gold-500/20 px-3 pb-3 pt-4 cursor-pointer hover:border-gold-500/40 transition-colors"
-                onClick={() => setLevelModal({ entry: { ...lf }, idx: realIdx })}
-              >
+              <div key={row.id} className="relative rounded-md border border-gold-500/20 px-3 pb-3 pt-4">
                 <div className="absolute top-0 left-3 flex items-center -translate-y-1/2">
                   <span className="px-1.5 bg-surface text-[10px] font-semibold uppercase tracking-widest text-gold-500/50 select-none">
-                    Level {lf.level}
+                    Level {levelVal}
                   </span>
                 </div>
-                {lf.traitIds.length === 0 ? (
-                  <p className="text-gold-700 text-xs italic">No traits assigned.</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {lf.traitIds.map(id => {
-                      const trait = traits.find(t => t.id === id);
-                      if (!trait) return null;
-                      return (
-                        <div key={id} className="border border-gold-500/10 rounded-md px-3 py-2 flex flex-col gap-1">
-                          <span className="text-gold-300 text-lg font-semibold leading-tight">{trait.name || <span className="italic text-gold-600">Unnamed</span>}</span>
-                          {trait.description && <Markdown className="text-[11px] text-gold-600">{trait.description}</Markdown>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                <div className="flex flex-col gap-2">
+                  {rowTraits.map(trait => (
+                    <div key={trait.id} className="border border-gold-500/10 rounded-md px-3 py-2">
+                      <span className="text-gold-300 text-xs font-semibold leading-tight">
+                        {trait.name || <span className="italic text-gold-600">Unnamed</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             );
-          })}
-
-        <button
-          type="button"
-          className="w-full! h-9! text-xs! gap-1.5! bg-transparent! border! border-dashed! border-gold-500/20! rounded-lg! text-gold-600! hover:text-gold-400! hover:border-gold-500/40!"
-          onClick={openAddLevel}
-        >
-          <Plus className="h-3 w-3" /> Add Level
-        </button>
+          });
+        })()}
 
       </div>
-
-      {levelModal && (
-        <LevelFeatureModal
-          entry={levelModal.entry}
-          isNew={levelModal.idx === null}
-          availableTraits={traits}
-          onCreateTrait={onCreateTrait}
-          onUpdateTrait={onUpdateTrait}
-          onDelete={levelModal.idx !== null ? () => { removeLevel(levelModal.idx!); setLevelModal(null); } : undefined}
-          onSave={saveLevel}
-          onClose={() => setLevelModal(null)}
-        />
-      )}
     </>
   );
 });

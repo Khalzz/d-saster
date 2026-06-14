@@ -166,6 +166,13 @@ fn delete_campaign(id: String) -> Result<(), String> {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct MulticlassEntry {
+    class_id: String,
+    level: i32,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct CharacterData {
     id: String,
     name: String,
@@ -173,6 +180,8 @@ struct CharacterData {
     origin: String,
     race: String,
     class_id: Option<String>,
+    #[serde(default)]
+    multiclass: Vec<MulticlassEntry>,
     ruleset_id: Option<String>,
     image: Option<String>,
     #[serde(rename = "type")]
@@ -180,6 +189,8 @@ struct CharacterData {
     stats: HashMap<String, i32>,
     #[serde(default)]
     saving_throws: HashMap<String, i32>,
+    #[serde(default)]
+    saving_throw_proficiencies: HashMap<String, bool>,
     #[serde(default)]
     skill_proficiencies: HashMap<String, bool>,
     #[serde(default)]
@@ -194,6 +205,8 @@ struct CharacterData {
     initiative: i32,
     #[serde(default = "default_speed")]
     speed: i32,
+    #[serde(default)]
+    custom_fields: HashMap<String, serde_json::Value>,
 }
 
 fn default_level() -> i32 { 1 }
@@ -269,16 +282,32 @@ fn characters_dir() -> Result<PathBuf, String> {
 }
 
 #[tauri::command]
-fn save_character(character: CharacterData) -> Result<(), String> {
+fn save_character(character: serde_json::Value) -> Result<(), String> {
+    eprintln!("[save_character] received payload keys: {:?}",
+        character.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()));
+
+    let id = character.get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "missing 'id' field".to_string())?;
+
+    eprintln!("[save_character] saving id={}", id);
+
+    // Validate we can also deserialize into the typed struct (for diagnostics only)
+    if let Err(e) = serde_json::from_value::<CharacterData>(character.clone()) {
+        eprintln!("[save_character] WARNING: typed deserialization failed: {}", e);
+        // Don't abort — still save the raw JSON so data is never lost
+    }
+
     let dir = characters_dir()?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let path = dir.join(format!("{}.json", character.id));
+    let path = dir.join(format!("{}.json", id));
     let json = serde_json::to_string_pretty(&character).map_err(|e| e.to_string())?;
+    eprintln!("[save_character] writing {} bytes to {:?}", json.len(), path);
     fs::write(path, json).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn list_characters() -> Result<Vec<CharacterData>, String> {
+fn list_characters() -> Result<Vec<serde_json::Value>, String> {
     let dir = characters_dir()?;
     if !dir.exists() {
         return Ok(vec![]);
@@ -290,12 +319,22 @@ fn list_characters() -> Result<Vec<CharacterData>, String> {
             continue;
         }
         let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        match serde_json::from_str::<CharacterData>(&content) {
-            Ok(c) => characters.push(c),
+        match serde_json::from_str::<serde_json::Value>(&content) {
+            Ok(v) => characters.push(v),
             Err(_) => continue,
         }
     }
     Ok(characters)
+}
+
+#[tauri::command]
+fn get_character(id: String) -> Result<serde_json::Value, String> {
+    let path = characters_dir()?.join(format!("{}.json", id));
+    if !path.exists() {
+        return Err(format!("Character {} not found", id));
+    }
+    let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    serde_json::from_str::<serde_json::Value>(&content).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -505,7 +544,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_scene, list_scenes, delete_scene,
             save_campaign, list_campaigns, delete_campaign,
-            save_character, list_characters, delete_character,
+            save_character, list_characters, get_character, delete_character,
             save_class, list_classes, delete_class,
             save_ruleset, list_rulesets, delete_ruleset,
             save_sheet, load_sheet, list_sheets, delete_sheet
