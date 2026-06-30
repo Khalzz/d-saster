@@ -18,7 +18,18 @@ const mockChar: SheetContext["char"] = {
   initiative: 2,
   speed: 30,
   customFields: {},
+  classId: "fighter",
+  multiclass: [
+    { classId: "fighter", level: 3 },
+    { classId: "wizard", level: 2 },
+  ],
 };
+
+const mockClasses: SheetContext["classes"] = [
+  { id: "fighter", name: "Fighter", description: "A master of martial combat." },
+  { id: "wizard", name: "Wizard", description: "A scholarly magic-user." },
+  { id: "rogue", name: "Rogue", description: "A scoundrel who uses stealth." },
+];
 
 const mockContext: SheetContext = {
   char: mockChar,
@@ -26,7 +37,7 @@ const mockContext: SheetContext = {
   ruleset: undefined,
   statDefs: [],
   skills: [],
-  classes: [],
+  classes: mockClasses,
   vars: { level: 5, proficiency_bonus: 3, name: "Character Name" },
 };
 

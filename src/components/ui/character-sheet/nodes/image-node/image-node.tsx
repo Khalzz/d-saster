@@ -5,16 +5,9 @@ import { ImagePlus, UserRound, X } from "lucide-react";
 
 // ── Image (portrait) ───────────────────────────────────────────────────────
 export function ImageNode({ node, useSheet }: { node: LayoutNode, useSheet: () => SheetContext }) {
-  const { width, height, squared, padding } = node.settings as ImageSettings;
+  const { width, height, squared, padding, grow } = node.settings as ImageSettings;
   const { char, onChange } = useSheet();
   const imgInputRef = useRef<HTMLInputElement>(null);
-
-  const containerStyle: React.CSSProperties = {
-    padding,
-    ...(width > 0 ? { width: `${width}%` } : {}),
-    ...(height > 0 ? { height: `${height}%` } : {}),
-    ...(squared && { aspectRatio: "1 / 1" }),
-  };
 
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -25,12 +18,8 @@ export function ImageNode({ node, useSheet }: { node: LayoutNode, useSheet: () =
     e.target.value = "";
   };
 
-  return (
-    <div
-      className="rounded-lg border border-gold-500/30 hover:border-gold-500/70 transition-colors cursor-pointer overflow-hidden relative group"
-      style={containerStyle}
-      onClick={() => imgInputRef.current?.click()}
-    >
+  const innerContent = (
+    <>
       <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
       {char.image ? (
         <>
@@ -52,6 +41,40 @@ export function ImageNode({ node, useSheet }: { node: LayoutNode, useSheet: () =
           <span className="text-xs select-none">Add portrait</span>
         </div>
       )}
+    </>
+  );
+
+  if (grow) {
+    // Outer div: flex item with zero intrinsic height — doesn't inflate the flex line.
+    // Inner div: absolute inset-0, fills the height set by align-self: stretch (= sibling height).
+    const outerStyle: React.CSSProperties = width > 0
+      ? { width: `${width}%`, flexShrink: 0, alignSelf: "stretch", position: "relative" }
+      : { flex: "1 1 0%", minWidth: 0, alignSelf: "stretch", position: "relative" };
+    return (
+      <div style={outerStyle}>
+        <div
+          className="absolute inset-0 rounded-lg border border-gold-500/30 hover:border-gold-500/70 transition-colors cursor-pointer overflow-hidden group"
+          style={{ padding }}
+          onClick={() => imgInputRef.current?.click()}
+        >
+          {innerContent}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-lg border border-gold-500/30 hover:border-gold-500/70 transition-colors cursor-pointer overflow-hidden relative group"
+      style={{
+        padding,
+        ...(width > 0 ? { width: `${width}%` } : {}),
+        ...(height > 0 ? { height: `${height}px` } : {}),
+        ...(squared && { aspectRatio: "1 / 1" }),
+      }}
+      onClick={() => imgInputRef.current?.click()}
+    >
+      {innerContent}
     </div>
   );
 }

@@ -74,9 +74,9 @@ export function ClassSelectorNode({ node, useSheet }: { node: LayoutNode, useShe
           const level = entry?.level ?? 0;
 
           return (
-            <div key={cls.id} className="flex items-center p-0 ring-1 ring-gold-500/20 rounded-md overflow-hidden">
+            <div key={cls.id} className="flex items-center p-0 h-8 ring-1 ring-gold-500/20 rounded-md overflow-hidden">
               <button
-                className="p-0! border-0! bg-transparent! text-gold-700! hover:text-red-400! hover:bg-red-500/10! px-1.5! self-stretch rounded-none!"
+                className="p-0! border-0! bg-transparent! text-gold-700! hover:text-red-400! hover:bg-red-500/10! px-1.5!  rounded-none!"
                 onClick={() => removeClass(cls.id)}
               >
                 <X className="h-3 w-3" />

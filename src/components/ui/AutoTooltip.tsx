@@ -1,6 +1,5 @@
-import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Markdown } from "./Markdown";
+import Tooltip from "./tooltip/Tooltip";
 
 export interface GlossaryTerm {
   name: string;
@@ -105,25 +104,15 @@ export function AutoTooltip({ children, terms, className }: {
   return (
     <div ref={containerRef} className={className}>
       {children}
-      {tooltip && createPortal(
-        <div
-          ref={tooltipRef}
-          className="fixed z-50 -translate-x-1/2 -translate-y-full pointer-events-none bg-surface border border-gold-500/30 rounded-lg px-3 py-2 shadow-xl w-max max-w-64"
-          style={{ top: tooltip.top, left: tooltip.left + nudge }}
-        >
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <p className="text-gold-300 text-xs font-medium">{tooltip.term.name}</p>
-            {tooltip.term.badge && (
-              <span className="text-gold-600 text-[9px] font-semibold uppercase tracking-wider">
-                {tooltip.term.badge}
-              </span>
-            )}
-          </div>
-          {tooltip.term.description && (
-            <Markdown className="text-[10px]">{tooltip.term.description}</Markdown>
-          )}
-        </div>,
-        document.body
+      {tooltip && (
+        <Tooltip
+          tooltipRef={tooltipRef}
+          top={tooltip.top}
+          left={tooltip.left + nudge}
+          title={tooltip.term.name}
+          badge={tooltip.term.badge}
+          text={tooltip.term.description}
+        />
       )}
     </div>
   );

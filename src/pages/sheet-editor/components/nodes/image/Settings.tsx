@@ -75,22 +75,36 @@ export function ImageSettingsForm({ settings, onChange }: NodeSettingsProps) {
 
   return (
     <>
+      {/* Grow toggle */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gold-500">Grow</span>
+          <span className="text-[10px] text-gold-700">Fill available space in container</span>
+        </div>
+        <button
+          type="button"
+          className={`relative w-7! min-w-0! h-4! rounded-full! border-0! p-0! transition-colors cursor-pointer ${s.grow ? "bg-gold-500!" : "bg-gold-500/20!"}`}
+          onClick={() => onChange({ grow: !s.grow })}
+        >
+          <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${s.grow ? "left-3.5 bg-base" : "left-0.5 bg-gold-700"}`} />
+        </button>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <SizeInput
           label="Width"
           value={s.width}
           onChange={(v) => onChange({ width: v })}
           max={100}
-          placeholder={s.squared ? "Auto" : "None"}
-          tooltip={s.squared ? "Value in %. Leave empty to derive width from height via aspect-ratio." : "Value in %. Leave empty to not set a width."}
+          placeholder={s.grow ? "Fill" : s.squared ? "Auto" : "None"}
+          tooltip={s.grow ? "Value in %. Leave empty to fill available horizontal space." : s.squared ? "Value in %. Leave empty to derive width from height via aspect-ratio." : "Value in %. Leave empty to not set a width."}
         />
         <SizeInput
           label="Height"
           value={s.height}
           onChange={(v) => onChange({ height: v })}
-          max={100}
-          placeholder={s.squared ? "Auto" : "None"}
-          tooltip={s.squared ? "Value in %. Leave empty to derive height from width via aspect-ratio." : "Value in %. Leave empty to not set a height."}
+          placeholder={s.grow ? "Auto" : s.squared ? "Auto" : "None"}
+          tooltip={s.grow ? "Height is controlled by Grow — it matches the sibling's height." : s.squared ? "Value in px. Leave empty to derive height from width via aspect-ratio." : "Value in px. Leave empty to not set a height."}
         />
       </div>
 

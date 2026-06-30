@@ -14,7 +14,7 @@ export function SectionPreview({ node, selectedIds, onSelect, renderChildren }: 
           ? "border-gold-400 shadow-[0_0_0_1px_rgba(200,168,75,0.3)]"
           : "border-gold-500/30 hover:border-gold-500/40"
       }`}
-      style={{ padding, paddingTop: padding, height: 'fit-content', ...(width > 0 ? { width: `${width}%` } : { width: '100%' }) }}
+      style={{ padding, paddingTop: padding, height: 'fit-content', maxHeight: 'fit-content', ...(width > 0 ? { width: `${width}%`, flexShrink: 0 } : { flex: "1 1 0%", minWidth: 0 }) }}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(node.id);

@@ -27,6 +27,10 @@ export interface NodeSettingsProps {
   settings: Record<string, unknown>;
   onChange: (patch: Record<string, unknown>) => void;
   availableVars?: VarDef[];
+  node?: LayoutNode;
+  onAddChild?: (type: string) => void;
+  onRemoveChild?: (id: string) => void;
+  onUpdateChild?: (id: string, patch: Record<string, unknown>) => void;
 }
 
 // ── Shared settings present on every node ──────────────────────────────────
@@ -53,6 +57,7 @@ export interface ImageSettings extends NodeSettings {
   width: number;     // percentage (1-100), 0 = auto
   height: number;    // px, 0 = auto
   squared: boolean;  // force 1:1 aspect ratio
+  grow: boolean;     // flex-grow: fills available space in container
 }
 
 export interface TextInputSettings extends NodeSettings {
@@ -137,11 +142,20 @@ export interface FeaturesAndTraitsSettings extends NodeSettings {
   width: number;     // percentage (1-100), 0 = auto
 }
 
+export interface TabsSettings extends NodeSettings {
+  width: number;     // percentage (1-100), 0 = auto
+}
+
+export interface TabPaneSettings extends NodeSettings {
+  label: string;
+  direction: "horizontal" | "vertical";
+}
+
 // ── The recursive layout node ──────────────────────────────────────────────
 export interface LayoutNode {
   id: string;
   type: NodeType;
-  settings: SectionSettings | ContainerSettings | ImageSettings | TextInputSettings | LevelCountSettings | CounterSettings | StaticCounterSettings | ClassSelectorSettings | GridSettings | StatSettings | AutoStatsSettings | AutoSkillsSettings | AutoSavingThrowsSettings | ProficiencyBonusSettings | SpecieSettings | FeaturesAndTraitsSettings;
+  settings: SectionSettings | ContainerSettings | ImageSettings | TextInputSettings | LevelCountSettings | CounterSettings | StaticCounterSettings | ClassSelectorSettings | GridSettings | StatSettings | AutoStatsSettings | AutoSkillsSettings | AutoSavingThrowsSettings | ProficiencyBonusSettings | SpecieSettings | FeaturesAndTraitsSettings | TabsSettings | TabPaneSettings;
   children: LayoutNode[];
 }
 
@@ -168,7 +182,7 @@ export function createImageNode(): LayoutNode {
   return {
     id: crypto.randomUUID(),
     type: "image",
-    settings: { width: 0, height: 0, squared: false, padding: 0, gap: 0 } satisfies ImageSettings,
+    settings: { width: 0, height: 0, squared: false, grow: false, padding: 0, gap: 0 } satisfies ImageSettings,
     children: [],
   };
 }
@@ -278,6 +292,24 @@ export function createFeaturesAndTraitsNode(): LayoutNode {
     type: "features-and-traits",
     settings: { width: 0, padding: 0, gap: 0 } satisfies FeaturesAndTraitsSettings,
     children: [],
+  };
+}
+
+export function createTabPaneNode(label = "Tab"): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "tab-pane",
+    settings: { label, padding: 8, gap: 8, direction: "vertical" } satisfies TabPaneSettings,
+    children: [],
+  };
+}
+
+export function createTabsNode(): LayoutNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "tabs",
+    settings: { width: 0, padding: 0, gap: 0 } satisfies TabsSettings,
+    children: [createTabPaneNode("Tab 1"), createTabPaneNode("Tab 2")],
   };
 }
 

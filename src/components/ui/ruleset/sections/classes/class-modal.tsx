@@ -6,6 +6,7 @@ import { NumberInput } from "../../../NumberInput";
 import { TraitPickerModal } from "../TraitPickerModal";
 import { ColorPicker } from "../../../../campaign/CampaignSelector";
 import type { RulesetClass, RulesetSpecieTrait, StatDefinition, RulesetSkill } from "../../../../../pages/ruleset/ruleset-editor";
+import { Markdown } from "../../../Markdown";
 
 function ModalSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -337,17 +338,25 @@ function FeatureTable({ table, onChange, availableTraits }: {
                     const colType = col.type ?? "text";
                     if (colType === "traits") {
                       const ids = (row.cells[col.id] as string[] | undefined) ?? [];
-                      const names = ids.map(id => availableTraits.find(t => t.id === id)?.name).filter(Boolean);
+                      const traits = ids.map(id => availableTraits.find(t => t.id === id)).filter((t): t is RulesetSpecieTrait => !!t);
                       return (
                         <td
                           key={col.id}
-                          className="px-2 py-1 cursor-pointer hover:bg-gold-500/5 transition-colors"
+                          className="px-2 py-1.5 hover:bg-gold-500/5 transition-colors"
                           onClick={() => setTraitPickerCell({ rowId: row.id, colId: col.id })}
                         >
-                          {names.length > 0
-                            ? <span className="text-gold-400 text-xs leading-snug">{names.join(", ")}</span>
-                            : <span className="text-gold-700 text-xs italic">None</span>
-                          }
+                          {traits.length > 0 ? (
+                            <div className="flex flex-col gap-1.5">
+                              {traits.map(t => (
+                                <div key={t.id} className="border border-gold-500/20 rounded-md px-2 py-1.5">
+                                  <p className="text-gold-300 text-[11px] font-semibold leading-tight mb-0.5">{t.name || "Unnamed"}</p>
+                                  {t.description && <Markdown className="text-[11px]">{t.description}</Markdown>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gold-700 text-xs italic cursor-pointer">None</span>
+                          )}
                         </td>
                       );
                     }
@@ -443,14 +452,20 @@ export const ClassInlineEditor = forwardRef<ClassInlineEditorHandle, {
     if (initial.featureTable) return initial;
     const levelColId = crypto.randomUUID();
     const traitsColId = crypto.randomUUID();
+    const rows = initial.levelFeatures?.length
+      ? initial.levelFeatures.map(lf => ({
+          id: crypto.randomUUID(),
+          cells: { [levelColId]: String(lf.level), [traitsColId]: lf.traitIds },
+        }))
+      : [{ id: crypto.randomUUID(), cells: { [levelColId]: "1", [traitsColId]: [] as string[] } }];
     return {
       ...initial,
       featureTable: {
         columns: [
-          { id: levelColId, label: "Level", type: "text" },
-          { id: traitsColId, label: "Class Features", type: "traits" },
+          { id: levelColId, label: "Level", type: "text" as const },
+          { id: traitsColId, label: "Class Features", type: "traits" as const },
         ],
-        rows: [{ id: crypto.randomUUID(), cells: { [levelColId]: "1", [traitsColId]: [] } }],
+        rows,
       },
     };
   });

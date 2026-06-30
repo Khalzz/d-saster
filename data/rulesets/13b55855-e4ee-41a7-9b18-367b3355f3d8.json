@@ -102,7 +102,83 @@
             "01bd2227-0032-4ab6-bbfa-57bc7475daa9"
           ]
         }
-      ]
+      ],
+      "featureTable": {
+        "columns": [
+          {
+            "id": "0fbda689-b9b1-4f8b-9560-3bf63b5d7dda",
+            "label": "Level",
+            "type": "text"
+          },
+          {
+            "id": "f12ba592-7125-4976-bcc7-c29ccaa9f44b",
+            "label": "Class Features",
+            "type": "traits"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "0fbda689-b9b1-4f8b-9560-3bf63b5d7dda": "1",
+              "f12ba592-7125-4976-bcc7-c29ccaa9f44b": [
+                "90030201-213f-42f9-acf6-3db11adebf8f",
+                "6eb9914f-6857-4984-ac9e-3c431b6b00a6",
+                "2b932c28-5f75-442f-9b61-b58f54885b74"
+              ]
+            },
+            "id": "ab811651-a4f2-44e2-a5d7-7437504d2bb8"
+          },
+          {
+            "cells": {
+              "0fbda689-b9b1-4f8b-9560-3bf63b5d7dda": "2",
+              "f12ba592-7125-4976-bcc7-c29ccaa9f44b": [
+                "178d32fa-c8b9-422b-a38e-70b011999cd3",
+                "4911217b-e737-4703-bdae-7f8878b77166"
+              ]
+            },
+            "id": "57cf55b6-edf8-4cae-97c1-3ed701ec5635"
+          },
+          {
+            "cells": {
+              "0fbda689-b9b1-4f8b-9560-3bf63b5d7dda": "3",
+              "f12ba592-7125-4976-bcc7-c29ccaa9f44b": [
+                "a105b45e-4be8-4c02-9786-711400423441",
+                "320ebc29-4068-4332-b525-23d4e0eea5bf"
+              ]
+            },
+            "id": "5d2ee687-fe05-423e-a92c-11e668149658"
+          },
+          {
+            "cells": {
+              "0fbda689-b9b1-4f8b-9560-3bf63b5d7dda": "4",
+              "f12ba592-7125-4976-bcc7-c29ccaa9f44b": [
+                "f39e0586-6f58-48d3-998c-1f3093c282db"
+              ]
+            },
+            "id": "10346877-2e5e-452c-b6b0-888df2d5f6c6"
+          },
+          {
+            "cells": {
+              "0fbda689-b9b1-4f8b-9560-3bf63b5d7dda": "5",
+              "f12ba592-7125-4976-bcc7-c29ccaa9f44b": [
+                "82dbb992-336a-44fa-bff8-47b91c3ea303",
+                "add7a8b2-c330-49bf-bc8b-353e73699279"
+              ]
+            },
+            "id": "4046d3f7-a5cf-4c22-aa7b-ffb188cc757c"
+          },
+          {
+            "cells": {
+              "0fbda689-b9b1-4f8b-9560-3bf63b5d7dda": "7",
+              "f12ba592-7125-4976-bcc7-c29ccaa9f44b": [
+                "01bd2227-0032-4ab6-bbfa-57bc7475daa9",
+                "b88aa866-3dc1-439f-bafe-365dc980250d"
+              ]
+            },
+            "id": "0dc7b0a0-b874-413e-abb7-a032713e8ee2"
+          }
+        ]
+      }
     },
     {
       "id": "9a4a02b0-495c-409a-a434-d920364a38fa",
@@ -378,6 +454,12 @@
       "fields": [],
       "id": "01bd2227-0032-4ab6-bbfa-57bc7475daa9",
       "name": "Feral Instinct"
+    },
+    {
+      "description": "this is a list:\n\n- first\n- second",
+      "fields": [],
+      "id": "b88aa866-3dc1-439f-bafe-365dc980250d",
+      "name": "Test"
     }
   ],
   "species": [

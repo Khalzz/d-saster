@@ -5,29 +5,21 @@ import type { RulesetSpecieTrait } from "../../../../../pages/ruleset/ruleset-ed
 import { applyTraitFieldValues } from "../../../../../pages/ruleset/ruleset-editor";
 
 function TraitCard({ trait, values = {} }: { trait: RulesetSpecieTrait; values?: Record<string, string> }) {
+  const fields = (trait.fields ?? []).map(f => `\`${f.label}: ${values[f.id] ?? "—"}\``).join(" ");
+  const header = `## ${trait.name || "—"}${fields ? `  ${fields}` : ""}`;
+  const body = trait.description ? applyTraitFieldValues(trait.description, trait.fields ?? [], values) : "";
+  const content = [header, body].filter(Boolean).join("\n\n");
+
   return (
-    <div className="border border-gold-500/20 rounded-lg px-3 py-2 flex flex-col gap-0.5">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-gold-300 text-xs font-medium leading-tight">
-          {trait.name || "—"}
-        </span>
-        {(trait.fields ?? []).map(f => (
-          <span key={f.id} className="text-[10px] text-gold-600">
-            {f.label}:{" "}
-            <span className="text-gold-400">{values[f.id] ?? "—"}</span>
-          </span>
-        ))}
-      </div>
-      {trait.description && (
-        <Markdown className="text-[11px]">{applyTraitFieldValues(trait.description, trait.fields ?? [], values)}</Markdown>
-      )}
+    <div className="border border-gold-500/20 rounded-lg p-2">
+      <Markdown>{content}</Markdown>
     </div>
   );
 }
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <span className="text-[9px] font-semibold uppercase tracking-widest text-gold-600">{label}</span>
       <div className="flex-1 h-px bg-gold-500/10" />
     </div>
@@ -138,7 +130,7 @@ export function FeaturesAndTraitsNode({ node, useSheet }: { node: LayoutNode; us
           </span>
         </div>
       ) : (
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-4">
           {specieTraits.length > 0 && (
             <div className="flex flex-col gap-2">
               <SectionLabel label="Specie Traits" />
@@ -148,12 +140,12 @@ export function FeaturesAndTraitsNode({ node, useSheet }: { node: LayoutNode; us
             </div>
           )}
           {classTraitGroups.map(({ className, levels }) => (
-            <div key={className} className="flex flex-col gap-3">
+            <div key={className} className="flex flex-col">
               <SectionLabel label={`${className} Features`} />
               {levels.map(({ level, traits }) => (
                 <div key={level} className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-semibold uppercase tracking-widest text-gold-500/50 shrink-0">Level {level}</span>
+                    <span className="text-[9px] font-semibold uppercase tracking-widest text-gold-500/60 shrink-0">Level {level}</span>
                     <div className="flex-1 h-px bg-gold-500/8" />
                   </div>
                   {traits.map((trait: RulesetSpecieTrait) => (

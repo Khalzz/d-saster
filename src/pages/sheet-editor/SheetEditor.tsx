@@ -20,10 +20,11 @@ import { autoSavingThrowsNode } from "./components/nodes/auto-saving-throws";
 import { proficiencyBonusNode } from "./components/nodes/proficiency-bonus";
 import { specieNode } from "./components/nodes/specie";
 import { featuresAndTraitsNode } from "./components/nodes/features-and-traits";
+import { tabsNode } from "./components/nodes/tabs";
 
 const SHEET_ID = "default";
 
-const nodeTypes = { ...sectionNode, ...imageNode, ...textInputNode, ...levelCountNode, ...counterNode, ...staticCounterNode, ...classSelectorNode, ...gridNode, ...autoStatsNode, ...autoSkillsNode, ...autoSavingThrowsNode, ...proficiencyBonusNode, ...specieNode, ...featuresAndTraitsNode };
+const nodeTypes = { ...sectionNode, ...imageNode, ...textInputNode, ...levelCountNode, ...counterNode, ...staticCounterNode, ...classSelectorNode, ...gridNode, ...autoStatsNode, ...autoSkillsNode, ...autoSavingThrowsNode, ...proficiencyBonusNode, ...specieNode, ...featuresAndTraitsNode, ...tabsNode };
 
 interface SheetData {
   id: string;

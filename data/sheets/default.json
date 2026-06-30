@@ -12,12 +12,13 @@
               "settings": {
                 "alt": "",
                 "gap": 0,
-                "height": 50,
+                "grow": true,
+                "height": 0,
                 "objectFit": "cover",
                 "padding": 0,
                 "squared": true,
                 "src": "",
-                "width": 32
+                "width": 25
               },
               "type": "image"
             },
@@ -144,6 +145,7 @@
           ],
           "id": "f9a2c74c-16ec-4384-9937-c743d30dd791",
           "settings": {
+            "direction": "column",
             "gap": 8,
             "padding": 8,
             "title": "Stats"
@@ -160,7 +162,7 @@
                       "children": [],
                       "id": "184fd273-d3a8-4fd3-a496-22ddfeb22603",
                       "settings": {
-                        "columns": 6,
+                        "columns": 3,
                         "formula": "",
                         "gap": 4,
                         "padding": 0
@@ -171,6 +173,7 @@
                   "id": "434380cd-f499-4a07-848a-94757dccc9e8",
                   "settings": {
                     "description": "Saving throws represent a **character's ability to resist or avoid harmful effects**. Each saving throw is tied to one of the six ability scores (STR, DEX, CON, INT, WIS, CHA).\n\nThey are used to **determine if a character can withstand something happening to them** — spells, traps, poison, fear, or any forced effect.\n\n*The calculation of saving throw modifier is:*\n**(Stat mod)** + **(proficiency bonus if proficient)**",
+                    "direction": "column",
                     "gap": 8,
                     "grow": false,
                     "padding": 8,
@@ -199,30 +202,6 @@
                     "grow": true,
                     "padding": 8,
                     "title": "Skills",
-                    "width": 0
-                  },
-                  "type": "section"
-                },
-                {
-                  "children": [
-                    {
-                      "children": [],
-                      "id": "94300411-9ce2-4d2d-b329-bc38f42f75ce",
-                      "settings": {
-                        "gap": 0,
-                        "padding": 0,
-                        "width": 0
-                      },
-                      "type": "features-and-traits"
-                    }
-                  ],
-                  "id": "cbb021f1-b7a2-4bbe-b1de-de0333f5c14e",
-                  "settings": {
-                    "description": "",
-                    "direction": "column",
-                    "gap": 8,
-                    "padding": 8,
-                    "title": "Features & Traits",
                     "width": 0
                   },
                   "type": "section"
@@ -458,6 +437,16 @@
             "width": 0
           },
           "type": "container"
+        },
+        {
+          "children": [],
+          "id": "6637d01e-fd87-46e9-9bb4-0e62ee5e5b13",
+          "settings": {
+            "gap": 0,
+            "padding": 0,
+            "width": 0
+          },
+          "type": "features-and-traits"
         }
       ],
       "id": "c8eb3a0e-6033-4be9-9f48-9c48b6a03f47",

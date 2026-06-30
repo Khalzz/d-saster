@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -390,6 +391,8 @@ struct RulesetClass {
     skill_proficiencies: RulesetSkillProficiencies,
     #[serde(default, rename = "levelFeatures")]
     level_features: Vec<RulesetClassLevelFeature>,
+    #[serde(default, rename = "featureTable", skip_serializing_if = "Option::is_none")]
+    feature_table: Option<Value>,
 }
 
 #[derive(Serialize, Deserialize)]

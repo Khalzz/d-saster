@@ -9,6 +9,7 @@ import {
   Columns3,
 } from "lucide-react";
 import type { LayoutNode, NodeType, NodeTypeConfig } from "../types";
+import { findNode } from "../types";
 import Modal from "../../../components/ui/modal/Modal";
 import SearchBar from "../../../components/ui/searchbar/SearchBar";
 
@@ -76,7 +77,7 @@ function TreeNode({
             : isSelected
               ? "bg-gold-500/15 text-gold-300"
               : "text-gold-500 hover:bg-gold-500/8"
-        } ${isDropTarget && dropTarget?.position === "inside" ? "ring-1 ring-gold-400/60" : ""} ${isDropTarget && dropTarget?.position === "before" ? "border-t-2 border-t-gold-400" : ""} ${isDropTarget && dropTarget?.position === "after" ? "border-b-2 border-b-gold-400" : ""}`}
+        } ${isDropTarget && dropTarget?.position === "inside" ? "bg-gold-400/8" : ""}`}
         style={{ paddingLeft: 8 + depth * 16 }}
         onPointerDown={(e) => {
           if (e.button === 0) onPointerDownGrip(e, node.id);
@@ -84,6 +85,17 @@ function TreeNode({
         onClick={(e) => onSelect(node.id, { shiftKey: e.shiftKey })}
         onContextMenu={(e) => onContextMenu(e, node.id)}
       >
+        {/* Drop indicators */}
+        {isDropTarget && dropTarget?.position === "before" && (
+          <div className="absolute top-0 right-0 h-0.5 bg-gold-400 pointer-events-none rounded-full" style={{ left: depth * 16 }} />
+        )}
+        {isDropTarget && dropTarget?.position === "after" && (
+          <div className="absolute bottom-0 right-0 h-0.5 bg-gold-400 pointer-events-none rounded-full" style={{ left: depth * 16 }} />
+        )}
+        {isDropTarget && dropTarget?.position === "inside" && (
+          <div className="absolute top-0 bottom-0 w-0.5 bg-gold-400/60 pointer-events-none rounded-full" style={{ left: depth * 16 }} />
+        )}
+
         {/* Expand/collapse toggle */}
         <span
           className={`shrink-0 w-4 h-4 flex items-center justify-center ${
@@ -143,7 +155,9 @@ interface HierarchyTreeProps {
   nodeTypes: Record<string, NodeTypeConfig>;
 }
 
-const POSITIONING_TYPES = new Set(["container", "section", "grid"]);
+const POSITIONING_TYPES = new Set(["container", "section", "grid", "tabs"]);
+// Types that should only appear as children of a specific parent (not in the root/generic picker)
+const INTERNAL_TYPES = new Set(["tab-pane"]);
 
 export function HierarchyTree({
   nodes,
@@ -169,6 +183,11 @@ export function HierarchyTree({
   const pendingDragId = useRef<string | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
   const DRAG_THRESHOLD = 5;
+
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
+  const nodeTypesRef = useRef(nodeTypes);
+  nodeTypesRef.current = nodeTypes;
 
   const nodeRefCallback = useCallback(
     (el: HTMLDivElement | null, id: string) => {
@@ -256,10 +275,13 @@ export function HierarchyTree({
         ) {
           const y = e.clientY - rect.top;
           const h = rect.height;
+          const targetNode = findNode(nodesRef.current, id);
+          const cfg = targetNode ? nodeTypesRef.current[targetNode.type] : undefined;
+          const isContainer = cfg && cfg.allowedChildren.length > 0;
           let position: DropPosition;
           if (y < h * 0.25) position = "before";
-          else if (y > h * 0.75) position = "after";
-          else position = "inside";
+          else if (!isContainer && y > h * 0.75) position = "after";
+          else position = isContainer ? "inside" : "after";
           found = { nodeId: id, position };
           break;
         }
@@ -370,12 +392,12 @@ export function HierarchyTree({
       };
       const parentType = findType(nodes, selectedId);
       if (!parentType || !nodeTypes[parentType]) {
-        allowedTypes = Object.keys(nodeTypes);
+        allowedTypes = Object.keys(nodeTypes).filter(t => !INTERNAL_TYPES.has(t));
       } else {
         allowedTypes = nodeTypes[parentType].allowedChildren;
       }
     } else {
-      allowedTypes = Object.keys(nodeTypes);
+      allowedTypes = Object.keys(nodeTypes).filter(t => !INTERNAL_TYPES.has(t));
     }
 
     const positioning: { label: string; type: NodeType; icon: React.ReactNode }[] = [];

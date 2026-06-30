@@ -260,6 +260,9 @@ export function FormEditor({ nodes, onChange, nodeTypes, extraVars = [] }: FormE
           node={selectedNode}
           selectedCount={selectedIds.size}
           onChange={handleSettingsChange}
+          onAddChild={selectedId ? (type) => handleAddChild(selectedId, type) : undefined}
+          onRemoveChild={handleDelete}
+          onUpdateChild={(id, patch) => onChange(updateNodeSettings(nodes, id, patch))}
           nodeTypes={allNodeTypes}
           availableVars={availableVars}
         />

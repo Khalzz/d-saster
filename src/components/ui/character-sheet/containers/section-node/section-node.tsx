@@ -12,7 +12,7 @@ export function SectionNode({ node, useSheet }: { node: LayoutNode, useSheet: ()
   return (
     <div
       className="relative rounded-md border border-gold-500/30"
-      style={{ padding, height: "fit-content", ...(width > 0 ? { width: `${width}%` } : { width: "100%" }) }}
+      style={{ padding, height: "fit-content", maxHeight: "fit-content", ...(width > 0 ? { width: `${width}%`, flexShrink: 0 } : { flex: "1 1 0%", minWidth: 0 }) }}
     >
       <span className="absolute top-0 left-3 h-2 flex items-center -translate-y-1/2 px-1.5 bg-surface text-[10px] font-semibold uppercase tracking-widest text-gold-500/50 select-none gap-1">
         {title || "Section"}

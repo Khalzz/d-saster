@@ -8,6 +8,7 @@ import { AutoSkillsNode } from "../../../components/ui/character-sheet/nodes/aut
 import { AutoStatsNode } from "../../../components/ui/character-sheet/nodes/auto-stats/auto-stats";
 import { StaticCounterNode } from "../../../components/ui/character-sheet/nodes/static-counter/static-counter";
 import { FeaturesAndTraitsNode } from "../../../components/ui/character-sheet/nodes/features-and-traits/features-and-traits";
+import { TabsNode } from "../../../components/ui/character-sheet/containers/tabs-node/tabs-node";
 import { SpecieNode } from "../../../components/ui/character-sheet/nodes/specie-node/specie-node";
 import { CountNode } from "../../../components/ui/character-sheet/nodes/count-node/count-node";
 import { ImageNode } from "../../../components/ui/character-sheet/nodes/image-node/image-node";
@@ -54,6 +55,15 @@ export function InteractiveNode({ node }: { node: LayoutNode }) {
     case "static-counter": return <StaticCounterNode node={node} useSheet={useSheet} />;
     case "specie": return <SpecieNode node={node} useSheet={useSheet} />;
     case "features-and-traits": return <FeaturesAndTraitsNode node={node} useSheet={useSheet} />;
+    case "tabs": return <TabsNode node={node} renderNode={(child) => <InteractiveNode key={child.id} node={child} />} />;
+    case "tab-pane": {
+      const { padding, gap, direction } = node.settings as import("../../sheet-editor/types").TabPaneSettings;
+      return (
+        <div style={{ display: "flex", flexDirection: direction === "horizontal" ? "row" : "column", flexWrap: direction === "horizontal" ? "wrap" : "nowrap", padding, gap }}>
+          {node.children.map((child) => <InteractiveNode key={child.id} node={child} />)}
+        </div>
+      );
+    }
     default: return null;
   }
 }
