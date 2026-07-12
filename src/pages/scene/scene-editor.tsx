@@ -4,6 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import SceneEditorCanvas, { Scene, DEFAULT_CELL_SIZE } from "../../components/game/SceneEditor";
 import { ChevronLeft } from "lucide-react";
 import toast from "react-hot-toast";
+import { broadcastCampaignUpdated, broadcastSceneUpdated } from "../../lib/appEvents";
+import type { Campaign } from "../../components/campaign/CampaignSelector";
 
 interface ExistingScene {
   id: string;
@@ -65,33 +67,22 @@ export default function SceneEditor() {
   };
 
   const saveScene = (s: Scene) => {
-    invoke("save_scene", {
-      scene: {
-        id: s.id,
-        name: s.name,
-        gridType: s.gridType,
-        cols: s.cols,
-        rows: s.rows,
-        disabledCells: [...s.disabledCells],
-        bg: s.bg,
-        bgBounds: s.bgBounds,
-        cellSize: s.cellSize,
-        lastEdited: new Date().toISOString(),
-        lastEditor: s.lastEditor ?? "DM",
-      },
-    });
+    const saved: Scene = { ...s, lastEdited: new Date().toISOString(), lastEditor: s.lastEditor ?? "DM" };
+    invoke("save_scene", { scene: { ...saved, disabledCells: [...saved.disabledCells] } })
+      .then(() => broadcastSceneUpdated(saved))
+      .catch(() => {});
   };
 
   const handleBack = async () => {
     const s = sceneRef.current;
     saveScene(s);
     if (state?.campaignId && !state?.existing) {
-      const allCampaigns = await invoke<{ id: string; scenes?: string[] }[]>("list_campaigns").catch(() => []);
+      const allCampaigns = await invoke<Campaign[]>("list_campaigns").catch(() => []);
       const campaign = allCampaigns.find(c => c.id === state.campaignId);
       if (campaign && !campaign.scenes?.includes(s.id)) {
         const updated = { ...campaign, scenes: [...(campaign.scenes ?? []), s.id] };
         invoke("save_campaign", { campaign: updated }).catch(() => {});
-        window.dispatchEvent(new Event("campaign-updated"));
+        broadcastCampaignUpdated(updated);
       }
     }
     toast("Saved");

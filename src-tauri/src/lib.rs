@@ -92,6 +92,14 @@ struct SceneToken {
     row: i32,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct CharacterGroup {
+    id: String,
+    name: String,
+    character_ids: Vec<String>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CampaignData {
@@ -107,6 +115,8 @@ struct CampaignData {
     last_active_scene: Option<String>,
     #[serde(default)]
     scene_tokens: Option<HashMap<String, Vec<SceneToken>>>,
+    #[serde(default)]
+    character_groups: Option<Vec<CharacterGroup>>,
 }
 
 fn campaigns_dir() -> Result<PathBuf, String> {

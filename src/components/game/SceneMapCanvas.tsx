@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Map, Crosshair, Mouse, MousePointerClick, Pencil, Trash2 } from "lucide-react";
+import { Map, Crosshair, Mouse, MousePointerClick, Pencil, Trash2, User } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-import type { Campaign, SceneNode } from "../campaign/CampaignSelector";
+import type { Campaign, SavedToken, SceneNode } from "../campaign/CampaignSelector";
 import type { Scene } from "./SceneEditor";
 import { DEFAULT_CELL_SIZE } from "./SceneEditor";
+import { broadcastCampaignUpdated, onSceneUpdated } from "../../lib/appEvents";
 
 interface SavedSceneData {
   id: string;
@@ -59,12 +60,13 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
   const [nodes, setNodes] = useState<SceneNode[]>(campaign.sceneMap ?? []);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
+  const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number; startX: number; startY: number } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [panning, setPanning] = useState<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
   const [connecting, setConnecting] = useState<{ fromId: string; fromDir: Direction; mouseX: number; mouseY: number } | null>(null);
   const [pendingConnect, setPendingConnect] = useState<{ fromId: string; fromDir: Direction; startClientX: number; startClientY: number } | null>(null);
+  const [dropHoverId, setDropHoverId] = useState<string | null>(null);
   const hasFittedRef = useRef(false);
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
@@ -72,13 +74,32 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
   panningRef.current = panning;
 
   // Load campaign scenes
-  useEffect(() => {
+  const loadScenes = useCallback(() => {
     invoke<SavedSceneData[]>("list_scenes").then(all => {
       const filtered = all.filter(s => (campaign.scenes ?? []).includes(s.id));
       scenesCache[campaign.id] = filtered;
       setScenes(filtered);
       setScenesLoaded(true);
     }).catch(() => setScenesLoaded(true));
+  }, [campaign]);
+
+  useEffect(() => {
+    loadScenes();
+  }, [loadScenes]);
+
+  // Patch in-place if any scene's own data (grid type, size, background, name...)
+  // is edited from any window, e.g. this canvas' own "Edit Scene" action —
+  // the full scene rides along with the event, so no disk round trip is needed.
+  useEffect(() => {
+    const unlisten = onSceneUpdated((scene) => {
+      setScenes(prev => {
+        if (!prev.some(s => s.id === scene.id)) return prev;
+        const updated = prev.map(s => s.id === scene.id ? { ...scene, disabledCells: [...scene.disabledCells] } : s);
+        scenesCache[campaign.id] = updated;
+        return updated;
+      });
+    });
+    return () => { unlisten.then(u => u()); };
   }, [campaign]);
 
   // Auto-add nodes for scenes not yet on the map
@@ -120,7 +141,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
   const persist = useCallback((updatedNodes: SceneNode[]) => {
     const updatedCampaign = { ...campaign, sceneMap: updatedNodes };
     invoke("save_campaign", { campaign: updatedCampaign }).then(() => {
-      window.dispatchEvent(new Event("campaign-updated"));
+      broadcastCampaignUpdated(updatedCampaign);
     }).catch(() => {});
   }, [campaign]);
 
@@ -132,7 +153,7 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
     const rect = containerRef.current!.getBoundingClientRect();
     const mx = (e.clientX - rect.left - pan.x) / zoom;
     const my = (e.clientY - rect.top - pan.y) / zoom;
-    setDragging({ id: nodeId, offsetX: mx - node.x, offsetY: my - node.y });
+    setDragging({ id: nodeId, offsetX: mx - node.x, offsetY: my - node.y, startX: node.x, startY: node.y });
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
@@ -182,7 +203,12 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
 
   const handleMouseUp = () => {
     if (dragging) {
-      persist(nodes);
+      // Skip the save+broadcast entirely if the node never actually moved
+      // (e.g. a plain click, or either click of a double-click)
+      const node = nodes.find(n => n.id === dragging.id);
+      if (node && (node.x !== dragging.startX || node.y !== dragging.startY)) {
+        persist(nodes);
+      }
       setDragging(null);
     }
     if (panning) setPanning(null);
@@ -351,11 +377,61 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
     const updatedScenes = (campaign.scenes ?? []).filter(s => s !== id);
     const updatedCampaign = { ...campaign, sceneMap: updatedNodes, scenes: updatedScenes };
     await invoke("save_campaign", { campaign: updatedCampaign }).catch(() => {});
-    window.dispatchEvent(new Event("campaign-updated"));
+    broadcastCampaignUpdated(updatedCampaign);
     setNodes(updatedNodes);
     setScenes(prev => prev.filter(s => s.id !== id));
     setPendingDelete(null);
     setContextMenu(null);
+  };
+
+  // Drop a character (dragged either from the toolbox Players panel or from
+  // another scene's avatar chip) onto a scene node to put them there. A
+  // character can only be in one scene at a time, so they're evicted from
+  // every other scene's roster first.
+  const addCharacterToScene = (character: { id: string; name: string; image?: string }, sceneData: SavedSceneData) => {
+    const allTokens = campaign.sceneTokens ?? {};
+    const updatedSceneTokens: Record<string, SavedToken[]> = { ...allTokens };
+    for (const sid of Object.keys(updatedSceneTokens)) {
+      if (sid === sceneData.id) continue;
+      updatedSceneTokens[sid] = updatedSceneTokens[sid].filter(t => t.characterId !== character.id);
+    }
+    const existingInTarget = updatedSceneTokens[sceneData.id] ?? [];
+    if (!existingInTarget.some(t => t.characterId === character.id)) {
+      const freeMode = sceneData.gridType === "none";
+      const col = freeMode ? (sceneData.bgBounds ? Math.round(sceneData.bgBounds.w / 2) : 400) : Math.floor(sceneData.cols / 2);
+      const row = freeMode ? (sceneData.bgBounds ? Math.round(sceneData.bgBounds.h / 2) : 300) : Math.floor(sceneData.rows / 2);
+      const token: SavedToken = { id: crypto.randomUUID(), characterId: character.id, name: character.name, image: character.image, col, row };
+      updatedSceneTokens[sceneData.id] = [...existingInTarget, token];
+    }
+    const updatedCampaign = { ...campaign, sceneTokens: updatedSceneTokens };
+    invoke("save_campaign", { campaign: updatedCampaign })
+      .then(() => broadcastCampaignUpdated(updatedCampaign))
+      .catch(() => {});
+  };
+
+  const handleAvatarDragStart = (e: React.DragEvent, token: SavedToken) => {
+    e.stopPropagation();
+    e.dataTransfer.setData("application/json", JSON.stringify({ id: token.characterId, name: token.name, image: token.image }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleNodeDragOver = (e: React.DragEvent, nodeId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    if (dropHoverId !== nodeId) setDropHoverId(nodeId);
+  };
+
+  const handleNodeDrop = (e: React.DragEvent, nodeId: string) => {
+    e.preventDefault();
+    setDropHoverId(null);
+    const data = e.dataTransfer.getData("application/json");
+    if (!data) return;
+    const sceneData = scenes.find(s => s.id === nodeId);
+    if (!sceneData) return;
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.id) addCharacterToScene(parsed, sceneData);
+    } catch { /* ignore */ }
   };
 
   const handleNodeContextMenu = (e: React.MouseEvent, nodeId: string) => {
@@ -410,11 +486,6 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
 
   return (
     <div className="flex flex-col w-full h-full">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between p-2 pl-4 border-b border-gold-500/20 shrink-0">
-        <p className="text-gold-400 font-medium text-sm">Scene Map</p>
-      </div>
-
       {/* Canvas */}
       <div
         ref={containerRef}
@@ -455,16 +526,23 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
             const scene = scenes.find(s => s.id === node.id);
             if (!scene) return null;
             const isActive = node.id === activeSceneId;
+            const sceneTokens = campaign.sceneTokens?.[node.id] ?? [];
+            const characterCount = sceneTokens.length;
             return (
               <div
                 key={node.id}
                 className={`absolute select-none rounded-lg border cursor-pointer transition-shadow ${
-                  isActive ? "border-gold-400/70 shadow-lg shadow-gold-400/10" : "border-gold-500/30 hover:border-gold-500/60"
+                  dropHoverId === node.id
+                    ? "border-gold-300 shadow-lg shadow-gold-400/30 ring-2 ring-gold-400/50"
+                    : isActive ? "border-gold-400/70 shadow-lg shadow-gold-400/10" : "border-gold-500/30 hover:border-gold-500/60"
                 }`}
                 style={{ left: node.x, top: node.y, width: NODE_W, height: NODE_H }}
                 onMouseDown={(e) => handleMouseDown(e, node.id)}
                 onDoubleClick={() => loadScene(scene)}
                 onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
+                onDragOver={(e) => handleNodeDragOver(e, node.id)}
+                onDragLeave={() => setDropHoverId(prev => (prev === node.id ? null : prev))}
+                onDrop={(e) => handleNodeDrop(e, node.id)}
               >
                 {/* Background thumbnail */}
                 <div className="w-full h-full bg-[#121212] relative flex items-center justify-center rounded-lg overflow-hidden">
@@ -473,14 +551,44 @@ export default function SceneMapCanvas({ campaign, onSceneSelect, activeSceneId 
                     : <Map className="h-5 w-5 text-gold-800" />
                   }
                   <div className="absolute inset-0 bg-black/40" />
-                  <p className="absolute bottom-1.5 left-2 right-2 text-gold-300 text-[10px] font-medium truncate">
-                    {scene.name}
-                  </p>
                   {isActive && (
-                    <span className="absolute top-1 left-1.5 text-[8px] font-semibold uppercase tracking-wider bg-gold-400/90 text-black px-1 py-0.5 rounded">
+                    <span className="absolute top-1 left-1.5 flex justify-center items-center text-[6px] leading-none font-light uppercase tracking-wider bg-gold-400/90 text-black px-1 py-1 rounded">
                       Active
                     </span>
                   )}
+                  {characterCount > 0 && (
+                    <div
+                      className="absolute top-1 right-1.5 flex items-center"
+                      title={`${characterCount} character${characterCount === 1 ? "" : "s"} in this scene`}
+                    >
+                      {sceneTokens.slice(0, 3).map((t, i) => (
+                        <div
+                          key={t.id}
+                          draggable
+                          onDragStart={(e) => handleAvatarDragStart(e, t)}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded-full border border-[#121212] overflow-hidden bg-[#1a1a1a] flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing"
+                          style={{ marginLeft: i === 0 ? 0 : -6, zIndex: 3 - i }}
+                          title={`Drag to move ${t.name} to another scene`}
+                        >
+                          {t.image
+                            ? <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
+                            : <User className="h-2 w-2 text-gold-700" />}
+                        </div>
+                      ))}
+                      {characterCount > 3 && (
+                        <div
+                          className="w-4 h-4 rounded-full border border-[#121212] bg-black/90 flex items-center justify-center text-[7px] font-semibold text-gold-300 shrink-0"
+                          style={{ marginLeft: -6 }}
+                        >
+                          +{characterCount - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <p className="absolute bottom-1.5 left-2 right-2 text-gold-300 text-[10px] font-medium truncate">
+                    {scene.name}
+                  </p>
                 </div>
 
                 {/* Connection ports (outside the node bounds) */}

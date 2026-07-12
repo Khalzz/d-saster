@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { Loader2 } from "lucide-react";
 import type { Scene } from "./SceneEditor";
 import { cellCenter, gridBounds } from "./HexSceneView";
 import type { Character } from "../../pages/character/character-editor";
@@ -31,6 +32,14 @@ const PlayCanvas = forwardRef<HTMLDivElement, PlayCanvasProps>(function PlayCanv
   const camRef = useRef({ x: 0, y: 0, zoom: 1 });
   const gridFitRef = useRef(1);
   const [panning, setPanning] = useState(false);
+
+  // Show a small loading indicator while a newly-selected scene's background
+  // image is still decoding, since the badge in the toolbox now flips instantly.
+  // Derived (not reset via an effect) so it can't race against the image's
+  // own onLoad and get stuck on if the image finishes before an effect runs.
+  const [loadedBgKey, setLoadedBgKey] = useState<string | null>(null);
+  const bgKey = scene.bg ? `${scene.id}:${scene.bg}` : null;
+  const bgLoading = bgKey !== null && loadedBgKey !== bgKey;
 
   const applyTransform = () => {
     const g = transformRef.current;
@@ -382,6 +391,8 @@ const PlayCanvas = forwardRef<HTMLDivElement, PlayCanvasProps>(function PlayCanv
                 width={scene.bgBounds ? scene.bgBounds.w / gridFit : cellCoverW}
                 height={scene.bgBounds ? scene.bgBounds.h / gridFit : cellCoverH}
                 preserveAspectRatio="none"
+                onLoad={() => setLoadedBgKey(bgKey)}
+                onError={() => setLoadedBgKey(bgKey)}
               />
             )}
             {cells}
@@ -389,6 +400,11 @@ const PlayCanvas = forwardRef<HTMLDivElement, PlayCanvasProps>(function PlayCanv
           </g>
         </g>
       </svg>
+      {bgLoading && (
+        <div className="absolute bottom-3 right-3 p-1.5 rounded bg-base/80 border border-gold-500/30 text-gold-400 pointer-events-none">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      )}
     </div>
   );
 });

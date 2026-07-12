@@ -7,6 +7,7 @@ import SceneEditor from "./pages/scene/scene-editor";
 import CharacterEditor from "./pages/character/character-editor";
 import RulesetEditor from "./pages/ruleset/ruleset-editor";
 import SheetEditor from "./pages/sheet-editor/SheetEditor";
+import ToolboxWindow from "./pages/toolbox-window/ToolboxWindow";
 function App() {
   return (
     <BrowserRouter>
@@ -18,6 +19,7 @@ function App() {
         <Route path="/character-editor" element={<CharacterEditor />} />
         <Route path="/ruleset-editor" element={<RulesetEditor />} />
         <Route path="/sheet-editor" element={<SheetEditor />} />
+        <Route path="/toolbox-window" element={<ToolboxWindow />} />
       </Routes>
     </BrowserRouter>
   );

@@ -8,6 +8,7 @@ import Input from "./ui/input/Input";
 import Field from "./ui/Field";
 import type { Campaign } from "./campaign/CampaignSelector";
 import type { Character } from "../pages/character/character-editor";
+import { broadcastCampaignUpdated } from "../lib/appEvents";
 
 interface SavedScene {
   id: string;
@@ -64,7 +65,7 @@ export default function GlobalSearchBar({ activeCampaign }: { activeCampaign?: C
     const updated: Campaign = { ...latest, scenes: [...sceneIds, target.id] };
     setSavedCampaigns(prev => prev.map(c => c.id === campaign.id ? updated : c));
     await invoke("save_campaign", { campaign: updated }).catch(() => {});
-    window.dispatchEvent(new CustomEvent("campaign-updated"));
+    broadcastCampaignUpdated(updated);
     setPendingAddScene(null);
   };
 

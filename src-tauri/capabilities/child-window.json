@@ -1,16 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "default",
-  "description": "Capability for the main window",
-  "windows": ["main"],
+  "identifier": "child-window",
+  "description": "Capability for windows opened at runtime from the main window",
+  "windows": ["child-*"],
   "permissions": [
     "core:default",
-    "opener:default",
     "core:window:default",
     "core:window:allow-start-dragging",
     "core:window:allow-close",
     "core:window:allow-toggle-maximize",
-    "core:window:allow-minimize",
-    "core:webview:allow-create-webview-window"
+    "core:window:allow-minimize"
   ]
 }

@@ -16,6 +16,12 @@ export interface SavedToken {
   row: number;
 }
 
+export interface CharacterGroup {
+  id: string;
+  name: string;
+  characterIds: string[];
+}
+
 export interface Campaign {
   id: string;
   title: string;
@@ -27,6 +33,7 @@ export interface Campaign {
   sceneMap?: SceneNode[];
   lastActiveScene?: string;
   sceneTokens?: Record<string, SavedToken[]>;
+  characterGroups?: CharacterGroup[];
 }
 
 const PRESET_COLORS = [

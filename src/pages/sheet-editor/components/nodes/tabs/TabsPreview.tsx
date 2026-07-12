@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import type { TabsSettings, TabPaneSettings } from "../../../types";
 import type { NodePreviewProps } from "../types";
+import { TabBar } from "../../../../../components/ui/tabs/TabBar";
 
 export function TabsPreview({ node, selectedIds, onSelect, renderChildren }: NodePreviewProps) {
   const { width } = node.settings as TabsSettings;
@@ -20,31 +21,16 @@ export function TabsPreview({ node, selectedIds, onSelect, renderChildren }: Nod
       onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
     >
       <div className="border border-gold-500/20 rounded-md overflow-hidden">
-        {/* Tab bar */}
-        <div className="flex border-b border-gold-500/20" onClick={(e) => e.stopPropagation()}>
-          {node.children.map((child, i) => {
-            const label = (child.settings as TabPaneSettings).label || `Tab ${i + 1}`;
-            const active = i === safeIdx;
-            return (
-              <button
-                key={child.id}
-                type="button"
-                className={`px-4 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors border-y-0 border-x-0 rounded-none border-r border-gold-500/20 last:border-r-0 ${
-                  active
-                    ? "text-gold-300 bg-gold-500/8"
-                    : "text-gold-600 hover:text-gold-400 hover:bg-gold-500/5"
-                }`}
-                onClick={() => setActiveIdx(i)}
-              >
-                {label}
-              </button>
-            );
-          })}
-          {node.children.length === 0 && (
-            <span className="text-gold-700 text-[10px] px-3 py-2 italic">No tabs</span>
-          )}
-          <div className="flex-1" />
-        </div>
+        <TabBar
+          tabs={node.children.map((child, i) => ({
+            id: child.id,
+            label: (child.settings as TabPaneSettings).label || `Tab ${i + 1}`,
+          }))}
+          activeId={pane?.id ?? null}
+          onSelect={(id) => setActiveIdx(node.children.findIndex(c => c.id === id))}
+          emptyMessage="No tabs"
+          onWrapperClick={(e) => e.stopPropagation()}
+        />
 
         {/* Active pane */}
         <div
