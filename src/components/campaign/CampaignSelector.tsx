@@ -14,6 +14,7 @@ export interface SavedToken {
   image?: string;
   col: number;
   row: number;
+  scale?: number;
 }
 
 export interface CharacterGroup {

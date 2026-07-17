@@ -90,6 +90,8 @@ struct SceneToken {
     image: Option<String>,
     col: i32,
     row: i32,
+    #[serde(default)]
+    scale: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -441,6 +443,8 @@ struct RulesetData {
     rules: Vec<serde_json::Value>,
     #[serde(default)]
     rule_categories: Vec<String>,
+    #[serde(default)]
+    custom_sections: Vec<serde_json::Value>,
 }
 
 fn rulesets_dir() -> Result<PathBuf, String> {

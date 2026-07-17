@@ -3,7 +3,7 @@ import { Dropdown, Option } from "../../components/ui/dropdown/Dropdown";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
-import PlayCanvas from "../../components/game/PlayCanvas";
+import PlayCanvas3D from "../../components/game/PlayCanvas3D";
 import { Scene } from "../../components/game/SceneEditor";
 import PlayersDisplay from "../../components/game/PlayersDisplay";
 import GlobalSearchBar from "../../components/GlobalSearchBar";
@@ -20,6 +20,7 @@ export interface Token {
   image?: string;
   col: number;
   row: number;
+  scale?: number;
 }
 
 // Module-level cache to persist state across navigations
@@ -41,7 +42,6 @@ export default function Play() {
   const [campaign, setCampaign] = useState<Campaign | null>(cached?.campaign ?? null);
   const [tokens, setTokens] = useState<Token[]>(cached?.tokens ?? []);
   const [sceneCharacters, setSceneCharacters] = useState<Character[]>(cached?.sceneCharacters ?? []);
-  const canvasRef = useRef<HTMLDivElement>(null);
 
   // Map of sceneId -> tokens for persistence across scene switches
   const sceneTokensMapRef = useRef<Record<string, SavedToken[]>>(cached?.sceneTokensMap ?? {});
@@ -98,6 +98,7 @@ export default function Play() {
         image: t.image,
         col: t.col,
         row: t.row,
+        scale: t.scale,
       }));
       return currentTokens;
     });
@@ -223,7 +224,7 @@ export default function Play() {
       // Persist immediately
       if (activeSceneRef.current && campaign) {
         sceneTokensMapRef.current[activeSceneRef.current.id] = updated.map(t => ({
-          id: t.id, characterId: t.characterId, name: t.name, image: t.image, col: t.col, row: t.row,
+          id: t.id, characterId: t.characterId, name: t.name, image: t.image, col: t.col, row: t.row, scale: t.scale,
         }));
         persistCampaign(campaign, sceneTokensMapRef.current);
       }
@@ -240,7 +241,21 @@ export default function Play() {
       // Persist immediately
       if (activeSceneRef.current && campaign) {
         sceneTokensMapRef.current[activeSceneRef.current.id] = updated.map(t => ({
-          id: t.id, characterId: t.characterId, name: t.name, image: t.image, col: t.col, row: t.row,
+          id: t.id, characterId: t.characterId, name: t.name, image: t.image, col: t.col, row: t.row, scale: t.scale,
+        }));
+        persistCampaign(campaign, sceneTokensMapRef.current);
+      }
+      return updated;
+    });
+  };
+
+  const resizeToken = (tokenId: string, scale: number) => {
+    setTokens(prev => {
+      const updated = prev.map(t => t.id === tokenId ? { ...t, scale } : t);
+      // Persist immediately
+      if (activeSceneRef.current && campaign) {
+        sceneTokensMapRef.current[activeSceneRef.current.id] = updated.map(t => ({
+          id: t.id, characterId: t.characterId, name: t.name, image: t.image, col: t.col, row: t.row, scale: t.scale,
         }));
         persistCampaign(campaign, sceneTokensMapRef.current);
       }
@@ -269,10 +284,10 @@ export default function Play() {
   }, [activeScene]);
 
   return (
-    <main className="h-full min-w-screen bg-base flex justify-center items-center relative overflow-hidden" ref={canvasRef}>
+    <main className="h-full min-w-screen bg-base flex justify-center items-center relative overflow-hidden">
       <GlobalSearchBar activeCampaign={campaign} />
       {activeScene ? (
-        <PlayCanvas ref={canvasRef} scene={activeScene} tokens={tokens} onDropCharacter={addToken} onMoveToken={moveToken} />
+        <PlayCanvas3D scene={activeScene} tokens={tokens} onMoveToken={moveToken} onResizeToken={resizeToken} />
       ) : (
         <div className="w-full h-full flex items-center justify-center flex-col text-gold-700 gap-4">
           <p>Welcome to <span className="text-gold-400 font-bold">D&Saster</span> start your campaign by <span className="font-bold">creating a new scene.</span></p>
@@ -330,10 +345,11 @@ function SideMenu({ campaign }: { campaign: Campaign | null }) {
   );
 }
 
-function SideTabButton({ icon, active, onClick }: { icon: React.ReactNode; active: boolean; onClick: () => void }) {
+function SideTabButton({ icon, active, onClick, title }: { icon: React.ReactNode; active: boolean; onClick: () => void; title?: string }) {
   return (
     <button
       onClick={onClick}
+      title={title}
       className={`p-1 rounded transition-colors ${active ? "text-gold-300 bg-[#1F1B13]" : "text-gold-600 hover:text-gold-400 bg-[#161310]"}`}
     >
       {icon}

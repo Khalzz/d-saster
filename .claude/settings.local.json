@@ -39,7 +39,13 @@
       "Bash(python3 -c \"import json; json.load\\(open\\('src-tauri/capabilities/default.json'\\)\\); json.load\\(open\\('src-tauri/capabilities/child-window.json'\\)\\); print\\('ok'\\)\")",
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('src-tauri/capabilities/default.json'\\)\\); JSON.parse\\(require\\('fs'\\).readFileSync\\('src-tauri/capabilities/child-window.json'\\)\\); console.log\\('ok'\\)\")",
       "Bash(python3 -c ' *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npm -v)",
+      "Bash(tail -80 \"C:\\\\Users\\\\Khals\\\\AppData\\\\Local\\\\npm-cache\\\\_logs\\\\2026-07-12T06_14_51_659Z-debug-0.log\")",
+      "Bash(pnpm -v)",
+      "Bash(npx vite *)",
+      "Bash(mv .git/index .git/index.corrupt.bak)",
+      "Bash(git reset *)"
     ]
   }
 }
