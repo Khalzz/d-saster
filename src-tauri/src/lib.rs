@@ -494,6 +494,37 @@ fn delete_ruleset(id: String) -> Result<(), String> {
     Ok(())
 }
 
+// Images embedded in a ruleset's markdown (page banners, gallery card
+// thumbnails) are saved as real files under the ruleset's own folder and
+// referenced by filename, rather than inlined as base64 — a single photo
+// as base64 text can run to thousands of lines inside the markdown source,
+// which is unreadable in the raw editor and bloats the saved JSON badly.
+fn ruleset_assets_dir(ruleset_id: &str) -> Result<PathBuf, String> {
+    Ok(rulesets_dir()?.join(ruleset_id).join("assets"))
+}
+
+#[tauri::command]
+fn save_ruleset_image(ruleset_id: String, filename: String, bytes: Vec<u8>) -> Result<String, String> {
+    let dir = ruleset_assets_dir(&ruleset_id)?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    fs::write(dir.join(&filename), bytes).map_err(|e| e.to_string())?;
+    Ok(filename)
+}
+
+#[tauri::command]
+fn read_ruleset_image(ruleset_id: String, filename: String) -> Result<Vec<u8>, String> {
+    fs::read(ruleset_assets_dir(&ruleset_id)?.join(&filename)).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_ruleset_image(ruleset_id: String, filename: String) -> Result<(), String> {
+    let path = ruleset_assets_dir(&ruleset_id)?.join(&filename);
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 // ── Sheets ─────────────────────────────────────────────────────────────────
 
 fn sheets_dir() -> Result<PathBuf, String> {
@@ -564,6 +595,7 @@ pub fn run() {
             save_character, list_characters, get_character, delete_character,
             save_class, list_classes, delete_class,
             save_ruleset, list_rulesets, delete_ruleset,
+            save_ruleset_image, read_ruleset_image, delete_ruleset_image,
             save_sheet, load_sheet, list_sheets, delete_sheet
         ])
         .run(tauri::generate_context!())

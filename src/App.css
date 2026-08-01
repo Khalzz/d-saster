@@ -1,4 +1,10 @@
 @import "tailwindcss";
+/* Tailwind's automatic content scanning skips `node_modules` by default
+   (it's gitignored) — this app's own class names get picked up fine, but
+   markdown-live-editor's own theme classes (bg-zinc-500 etc., baked into
+   its published dist/index.js) never would without explicitly including
+   it here, and would just silently generate no CSS. */
+@source "../node_modules/markdown-live-editor/dist";
 
 @theme {
   --color-base: #161616;
@@ -121,6 +127,14 @@ html, body, #root {
   margin: 0;
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+.is-editor-empty.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-gold-700);
 }
 
 ::-webkit-scrollbar {

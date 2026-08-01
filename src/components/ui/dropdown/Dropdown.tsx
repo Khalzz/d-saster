@@ -39,9 +39,9 @@ function Dropdown(
   );
 }
 
-function Option({ children, onClick, className }: { children: React.ReactNode; onClick: () => void; className?: string }) {
+function Option({ children, onClick, onMouseEnter, className, style }: { children: React.ReactNode; onClick: () => void; onMouseEnter?: () => void; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`px-4 py-2 hover:bg-gold-500/10 cursor-pointer transition-colors ${className}`} onClick={onClick}>
+    <div className={`px-4 py-2 hover:bg-gold-500/10 cursor-pointer transition-colors ${className}`} onClick={onClick} onMouseEnter={onMouseEnter} style={style}>
       {children}
     </div>
   )
