@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Minus, Plus } from "lucide-react";
 import { Document, Page, Thumbnail } from "../../lib/pdf";
+import { useCampaignAssetUrl } from "../../lib/campaignAssets";
 import "react-pdf/dist/Page/TextLayer.css";
 
 const MAX_PAGE_WIDTH = 800;
 
-export default function PdfViewer({ name, url, onBack }: {
+export default function PdfViewer({ name, campaignId, filename, onBack }: {
   name: string;
-  url: string;
+  campaignId: string;
+  filename: string;
   onBack: () => void;
 }) {
+  const url = useCampaignAssetUrl(campaignId, filename);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1);
   const [pageWidth, setPageWidth] = useState(MAX_PAGE_WIDTH);
@@ -67,11 +70,12 @@ export default function PdfViewer({ name, url, onBack }: {
       </div>
 
       <Document
-        file={url}
+        file={url ?? undefined}
         suspense={false}
         onLoadSuccess={({ numPages }) => setNumPages(numPages)}
         loading={<p className="text-gold-600 text-sm p-6">Loading…</p>}
         error={<p className="text-red-400 text-sm p-6">Failed to load PDF.</p>}
+        noData={<p className="text-gold-600 text-sm p-6">Loading…</p>}
         className="flex-1 min-h-0 flex"
       >
         <div className="w-28 shrink-0 border-r border-gold-500/20 overflow-y-auto flex flex-col items-center gap-3 p-3">

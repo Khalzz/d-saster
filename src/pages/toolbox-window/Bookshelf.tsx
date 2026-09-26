@@ -1,52 +1,48 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { BookOpen, MoreVertical, Plus } from "lucide-react";
 import { Dropdown, Option } from "../../components/ui/dropdown/Dropdown";
 import { Document, Thumbnail } from "../../lib/pdf";
+import { deleteCampaignAssetFile, saveCampaignAssetFile, useCampaignAssetUrl } from "../../lib/campaignAssets";
+import { broadcastCampaignUpdated } from "../../lib/appEvents";
+import type { Campaign, CampaignAsset } from "../../components/campaign/CampaignSelector";
 import PdfViewer from "./PdfViewer";
 
-interface Book {
-  id: string;
-  name: string;
-  format: "pdf";
-  url: string;
-  uploadedAt: number;
-}
-
-export default function Bookshelf() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [viewingBook, setViewingBook] = useState<Book | null>(null);
+export default function Bookshelf({ campaign }: { campaign: Campaign }) {
+  const books = campaign.assets ?? [];
+  const [viewingBook, setViewingBook] = useState<CampaignAsset | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Keep a live ref so the unmount-cleanup effect below always sees the
-  // latest list, since its own closure only runs once on mount.
-  const booksRef = useRef<Book[]>(books);
-  useEffect(() => { booksRef.current = books; }, [books]);
-  useEffect(() => () => { booksRef.current.forEach(b => URL.revokeObjectURL(b.url)); }, []);
+  const persistAssets = (updated: CampaignAsset[]) => {
+    const updatedCampaign = { ...campaign, assets: updated };
+    invoke("save_campaign", { campaign: updatedCampaign })
+      .then(() => broadcastCampaignUpdated(updatedCampaign))
+      .catch(() => {});
+  };
 
-  const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const book: Book = {
+    const filename = await saveCampaignAssetFile(campaign.id, file);
+    const book: CampaignAsset = {
       id: crypto.randomUUID(),
       name: file.name.replace(/\.pdf$/i, ""),
       format: "pdf",
-      url: URL.createObjectURL(file),
+      filename,
       uploadedAt: Date.now(),
     };
-    setBooks(prev => [...prev, book]);
+    persistAssets([...books, book]);
   };
 
   const removeBook = (id: string) => {
-    setBooks(prev => {
-      const book = prev.find(b => b.id === id);
-      if (book) URL.revokeObjectURL(book.url);
-      return prev.filter(b => b.id !== id);
-    });
+    const book = books.find(b => b.id === id);
+    if (book) deleteCampaignAssetFile(campaign.id, book.filename);
+    persistAssets(books.filter(b => b.id !== id));
   };
 
   if (viewingBook) {
-    return <PdfViewer name={viewingBook.name} url={viewingBook.url} onBack={() => setViewingBook(null)} />;
+    return <PdfViewer name={viewingBook.name} campaignId={campaign.id} filename={viewingBook.filename} onBack={() => setViewingBook(null)} />;
   }
 
   return (
@@ -71,6 +67,7 @@ export default function Bookshelf() {
         {books.map(book => (
           <BookCard
             key={book.id}
+            campaignId={campaign.id}
             book={book}
             onOpen={() => setViewingBook(book)}
             onRemove={() => removeBook(book.id)}
@@ -81,12 +78,14 @@ export default function Bookshelf() {
   );
 }
 
-function BookCard({ book, onOpen, onRemove }: {
-  book: Book;
+function BookCard({ campaignId, book, onOpen, onRemove }: {
+  campaignId: string;
+  book: CampaignAsset;
   onOpen: () => void;
   onRemove: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const url = useCampaignAssetUrl(campaignId, book.filename);
   const dateLabel = new Date(book.uploadedAt).toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -99,22 +98,26 @@ function BookCard({ book, onOpen, onRemove }: {
         onDoubleClick={onOpen}
         className="group relative aspect-2/3 rounded-xl border border-transparent bg-surface/40 overflow-hidden flex items-center justify-center cursor-pointer transition-colors select-none hover:border-gold-500/40"
       >
-        <Document
-          file={book.url}
-          suspense={false}
-          loading={<BookOpen className="h-14 w-14 text-gold-700" />}
-          error={<BookOpen className="h-14 w-14 text-gold-700" />}
-          noData={<BookOpen className="h-14 w-14 text-gold-700" />}
-          className="absolute inset-0 flex items-center justify-center"
-        >
-          <Thumbnail
-            pageNumber={1}
-            width={260}
+        {url ? (
+          <Document
+            file={url}
             suspense={false}
-            loading=""
-            className="[&_canvas]:w-full! [&_canvas]:h-full! [&_canvas]:object-cover"
-          />
-        </Document>
+            loading={<BookOpen className="h-14 w-14 text-gold-700" />}
+            error={<BookOpen className="h-14 w-14 text-gold-700" />}
+            noData={<BookOpen className="h-14 w-14 text-gold-700" />}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            <Thumbnail
+              pageNumber={1}
+              width={260}
+              suspense={false}
+              loading=""
+              className="[&_canvas]:w-full! [&_canvas]:h-full! [&_canvas]:object-cover"
+            />
+          </Document>
+        ) : (
+          <BookOpen className="h-14 w-14 text-gold-700" />
+        )}
 
         <div className="absolute top-2 right-2">
           <button

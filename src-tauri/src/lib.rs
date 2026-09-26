@@ -102,6 +102,16 @@ struct CharacterGroup {
     character_ids: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct CampaignAsset {
+    id: String,
+    name: String,
+    format: String,
+    filename: String,
+    uploaded_at: i64,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CampaignData {
@@ -119,6 +129,8 @@ struct CampaignData {
     scene_tokens: Option<HashMap<String, Vec<SceneToken>>>,
     #[serde(default)]
     character_groups: Option<Vec<CharacterGroup>>,
+    #[serde(default)]
+    assets: Option<Vec<CampaignAsset>>,
 }
 
 fn campaigns_dir() -> Result<PathBuf, String> {
@@ -171,6 +183,36 @@ fn delete_scene(id: String) -> Result<(), String> {
 #[tauri::command]
 fn delete_campaign(id: String) -> Result<(), String> {
     let path = campaigns_dir()?.join(format!("{}.json", id));
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+// Uploaded books (Bookshelf) are saved as real files under the campaign's own
+// asset folder and referenced from the campaign JSON by filename only, same
+// reasoning as ruleset_assets_dir below — a PDF as base64 would bloat the
+// campaign's JSON file badly.
+fn campaign_assets_dir(campaign_id: &str) -> Result<PathBuf, String> {
+    Ok(campaigns_dir()?.join(campaign_id).join("assets"))
+}
+
+#[tauri::command]
+fn save_campaign_asset(campaign_id: String, filename: String, bytes: Vec<u8>) -> Result<String, String> {
+    let dir = campaign_assets_dir(&campaign_id)?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    fs::write(dir.join(&filename), bytes).map_err(|e| e.to_string())?;
+    Ok(filename)
+}
+
+#[tauri::command]
+fn read_campaign_asset(campaign_id: String, filename: String) -> Result<Vec<u8>, String> {
+    fs::read(campaign_assets_dir(&campaign_id)?.join(&filename)).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_campaign_asset(campaign_id: String, filename: String) -> Result<(), String> {
+    let path = campaign_assets_dir(&campaign_id)?.join(&filename);
     if path.exists() {
         fs::remove_file(path).map_err(|e| e.to_string())?;
     }
@@ -592,6 +634,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_scene, list_scenes, delete_scene,
             save_campaign, list_campaigns, delete_campaign,
+            save_campaign_asset, read_campaign_asset, delete_campaign_asset,
             save_character, list_characters, get_character, delete_character,
             save_class, list_classes, delete_class,
             save_ruleset, list_rulesets, delete_ruleset,

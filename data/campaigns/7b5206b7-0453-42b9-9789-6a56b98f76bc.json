@@ -49,6 +49,8 @@
   ],
   "lastActiveScene": "dbd27af1-1f2b-4d6d-8d26-a46447d2c4b9",
   "sceneTokens": {
+    "3c3b863d-fc6e-4e93-a51d-4d68af4491bb": [],
+    "33b4edd9-d261-41a0-9532-3066c07d92cb": [],
     "dbd27af1-1f2b-4d6d-8d26-a46447d2c4b9": [
       {
         "id": "375a9b52-867c-4047-9195-caba76810b2d",
@@ -59,9 +61,23 @@
         "row": 2269,
         "scale": null
       }
-    ],
-    "3c3b863d-fc6e-4e93-a51d-4d68af4491bb": [],
-    "33b4edd9-d261-41a0-9532-3066c07d92cb": []
+    ]
   },
-  "characterGroups": []
+  "characterGroups": [],
+  "assets": [
+    {
+      "id": "4f6b2312-ff59-4716-aefc-1d08cff30d76",
+      "name": "Dm's Rules",
+      "format": "pdf",
+      "filename": "a0940b84-79f9-4ba2-acf0-91b740fc5571.pdf",
+      "uploadedAt": 1790444097114
+    },
+    {
+      "id": "853f642e-77aa-4440-a483-13d85a5953ea",
+      "name": "Player's Rules",
+      "format": "pdf",
+      "filename": "159842d7-0a49-460e-8eb2-b24bbf84d593.pdf",
+      "uploadedAt": 1790444100246
+    }
+  ]
 }

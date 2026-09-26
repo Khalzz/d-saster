@@ -23,6 +23,14 @@ export interface CharacterGroup {
   characterIds: string[];
 }
 
+export interface CampaignAsset {
+  id: string;
+  name: string;
+  format: string;
+  filename: string;
+  uploadedAt: number;
+}
+
 export interface Campaign {
   id: string;
   title: string;
@@ -35,6 +43,7 @@ export interface Campaign {
   lastActiveScene?: string;
   sceneTokens?: Record<string, SavedToken[]>;
   characterGroups?: CharacterGroup[];
+  assets?: CampaignAsset[];
 }
 
 const PRESET_COLORS = [

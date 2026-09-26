@@ -92,7 +92,7 @@ export default function ToolboxWindow() {
             id: "bookshelf",
             label: "Bookshelf",
             icon: <BookOpen className="h-3.5 w-3.5" />,
-            content: <Bookshelf />,
+            content: <Bookshelf campaign={campaign} />,
           },
         ]}
       />
