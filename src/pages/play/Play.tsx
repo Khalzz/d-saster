@@ -326,7 +326,12 @@ function SideMenu({ campaign }: { campaign: Campaign | null }) {
       toolboxWindowRef.current.close();
       return;
     }
-    const win = openChildWindow(`/toolbox-window?campaignId=${campaign?.id ?? ""}`, { title: "Toolbox", rememberGeometryKey: "toolbox-window" });
+    const win = openChildWindow(`/toolbox-window?campaignId=${campaign?.id ?? ""}`, {
+      title: "Toolbox",
+      rememberGeometryKey: "toolbox-window",
+      minWidth: 900,
+      minHeight: 600,
+    });
     toolboxWindowRef.current = win;
     setToolboxWindowOpen(true);
     win.once("tauri://destroyed", () => {

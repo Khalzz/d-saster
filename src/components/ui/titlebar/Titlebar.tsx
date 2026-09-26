@@ -17,14 +17,23 @@ export default function Titlebar() {
   return (
     <div
       data-tauri-drag-region
-      className="titlebar flex justify-between items-center bg-base p-2 border-b border-gold-500/20"
+      className="titlebar grid grid-cols-3 items-center bg-base border-b border-gold-500/20"
       onDoubleClick={toggleMaximize}
     >
-      <div className="flex items-center gap-1.5 px-1 text-gold-400 pointer-events-none">
+      <div className="flex items-center gap-1.5 text-gold-400 pointer-events-none p-2">
         <Dices className="h-3.5 w-3.5" />
         <span className="text-xs font-medium">{title}</span>
       </div>
-      <div className="controls flex flex-row gap-1">
+
+      <div className="flex justify-center">
+          <input
+            type="text"
+            placeholder="Search"
+            className="w-full h-6 bg-transparent text-xs text-gold-200 placeholder:text-gold-700 outline-none"
+          />
+      </div>
+
+      <div className="controls flex flex-row gap-1 justify-self-end p-2">
         <button className=" h-5 w-5 min-w-0 rounded-full" title="minimize" onClick={minimize}>
           <Minus className="h-3 w-3" />
         </button>

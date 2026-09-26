@@ -5,6 +5,9 @@ export interface OpenChildWindowOptions {
   title?: string;
   width?: number;
   height?: number;
+  /** Floor for user resizing. Tauri only applies this when both are set. */
+  minWidth?: number;
+  minHeight?: number;
   /** If set, this window's position & size are restored on open and saved as it's moved/resized. */
   rememberGeometryKey?: string;
 }
@@ -23,6 +26,8 @@ export function openChildWindow(path: string, options: OpenChildWindowOptions = 
     height: saved?.height ?? options.height ?? 600,
     x: saved?.x,
     y: saved?.y,
+    minWidth: options.minWidth,
+    minHeight: options.minHeight,
     decorations: false,
     dragDropEnabled: false,
   });

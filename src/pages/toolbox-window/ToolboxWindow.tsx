@@ -1,4 +1,4 @@
-import { Backpack, Map, User } from "lucide-react";
+import { Backpack, BookOpen, Map, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
@@ -7,8 +7,8 @@ import type { Character } from "../character/character-editor";
 import type { Scene } from "../../components/game/SceneEditor";
 import SceneMapCanvas from "../../components/game/SceneMapCanvas";
 import { onActiveSceneChanged, onCampaignUpdated, requestCharacterSelect, requestSceneSelect } from "../../lib/appEvents";
-import { Tabs } from "../../components/ui/tabs/Tabs";
-import PlayersPanel from "./PlayersPanel";
+import { SidebarTabs } from "../../components/ui/tabs/SidebarTabs";
+import Bookshelf from "./Bookshelf";
 
 export default function ToolboxWindow() {
   const [searchParams] = useSearchParams();
@@ -57,9 +57,8 @@ export default function ToolboxWindow() {
 
   return (
     <div className="w-full h-full flex flex-row bg-base">
-      <PlayersPanel campaign={campaign} />
-      <Tabs
-        className="flex-1 min-w-0 h-full"
+      <SidebarTabs
+        className="w-full h-full"
         tabs={[
           {
             id: "maps",
@@ -88,6 +87,12 @@ export default function ToolboxWindow() {
                 <p className="text-gold-700 text-xs">No items added yet.</p>
               </div>
             ),
+          },
+          {
+            id: "bookshelf",
+            label: "Bookshelf",
+            icon: <BookOpen className="h-3.5 w-3.5" />,
+            content: <Bookshelf />,
           },
         ]}
       />
